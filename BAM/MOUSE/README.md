@@ -1,5 +1,7 @@
 # BAM MOUSE example
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22872281.svg)](https://doi.org/10.5281/zenodo.22872281)
+
 This example demonstrates the standard solid-sample correction workflow for
 the BAM MOUSE SAXS/WAXS instrument. It uses one zirconia-composite sample and
 its associated empty-instrument background, each represented in ten instrument
@@ -22,14 +24,27 @@ in each file. The upstream stacking/conversion procedure is described in the
 notebook but is not part of this packaged example.
 
 The data payload is licensed under CC BY 4.0; see `DATA_LICENSE.json` and
-`DATA_LICENSE.txt`. Its final attribution will cite the version-specific Zenodo
-record and DOI.
+`DATA_LICENSE.txt`.
+
+## Data availability
+
+The notebook uses version 1.0.0 of the BAM MOUSE example dataset, archived on
+Zenodo under the version-specific DOI
+[10.5281/zenodo.22872281](https://doi.org/10.5281/zenodo.22872281). The tracked
+`data-manifest.json` binds this example to the exact archive and records its
+size, SHA-256 checksum, and the checksums of all extracted files.
+
+The preferred citation is:
+
+> Pauw, Brian Richard, Müller-Elmau, Johanna, & Blessmann, Finn Eric. (2026).
+> *BAM MOUSE SAXS/WAXS example data for MoDaCor* (Version 1.0.0) [Data set].
+> Zenodo. https://doi.org/10.5281/zenodo.22872281
 
 ## Running the example
 
 If `data/` is absent, first run `python tools/data_repository.py download
-BAM/MOUSE` from the repository root. Before the first Zenodo release,
-contributors must obtain the development payload directly from the maintainers.
+BAM/MOUSE` from the repository root. This downloads and verifies dataset
+version 1.0.0 from Zenodo.
 
 Start Jupyter from the repository root or this directory, select the prepared
 MoDaCor kernel, and run `MOUSE_solids_modacor.ipynb` from top to bottom. The
@@ -44,8 +59,8 @@ referenced background has the same configuration number.
 
 Using MoDaCor 1.8.0, repository validation passes, all ten sample/background
 pairs resolve to matching configurations, and the 42-step pipeline prepares.
-The complete ten-file runtime-server loop still needs to be rerun during the
-release freeze, when its runtime and output inventory will be recorded.
+The complete ten-file runtime-server loop still needs to be rerun and its
+runtime and output inventory recorded for this release.
 
 ## Supplementary poster visualizations and testing
 
@@ -81,5 +96,5 @@ run with a newer version can be identified clearly.
 - The main solids pipeline does not yet route capillary samples through the
   demonstrated capillary correction, and displaced-dispersant handling remains
   future work.
-- Embedded proposal and user metadata include personal identifiers. Permission
-  and retention/sanitization must be resolved before public release.
+- Version 1.0.0 was published with embedded proposal and user metadata
+  retained; this should be reviewed again before publishing a later version.

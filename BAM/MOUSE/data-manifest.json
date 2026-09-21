@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "instrument": "BAM/MOUSE",
-  "data_version": "development",
+  "data_version": "1.0.0",
   "data_license": {
     "spdx_id": "CC-BY-4.0",
     "name": "Creative Commons Attribution 4.0 International",
@@ -12,15 +12,15 @@
     "attribution": "Please cite the version-specific Zenodo record for the BAM MOUSE example data, retain the creator and DOI metadata supplied there, and indicate whether changes were made."
   },
   "zenodo": {
-    "record_id": null,
-    "doi": null,
-    "concept_doi": null
+    "record_id": 22872281,
+    "doi": "10.5281/zenodo.22872281",
+    "concept_doi": "10.5281/zenodo.22872280"
   },
   "archive": {
     "filename": "BAM-MOUSE-data.zip",
-    "url": null,
-    "size_bytes": null,
-    "sha256": null
+    "url": "https://zenodo.org/records/22872281/files/BAM-MOUSE-data.zip?download=1",
+    "size_bytes": 664241500,
+    "sha256": "22741b4d747abd6fa861c82471107522752d2936eccaba9f98373f633a40bade"
   },
   "files": [
     {
