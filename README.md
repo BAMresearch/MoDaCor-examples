@@ -1,5 +1,8 @@
 # MoDaCor instrument examples
 
+<span style="color:red">*these examples are still being worked on, the first practical data will become availalbe shortly.*</span>.
+
+
 This repository is the canonical collection of instrument-specific MoDaCor
 application examples. Each example combines a runnable notebook, one or more
 pipeline YAML files, and enough representative data to exercise the workflow.
