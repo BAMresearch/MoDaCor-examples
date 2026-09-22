@@ -1,21 +1,19 @@
 # MoDaCor instrument examples
 
-<span style="color:red">*these examples are still being worked on, the first practical data will become availalbe shortly.*</span>.
-
-
 This repository is the canonical collection of instrument-specific MoDaCor
 application examples. Each example combines a runnable notebook, one or more
 pipeline YAML files, and enough representative data to exercise the workflow.
 
-The collection is under active development. It is not yet the frozen Zenodo
-release: more instruments will be added, licensing and personal-metadata
-decisions remain open, and the final release will pin an exact MoDaCor version.
+The BAM MOUSE example data are published and citable as version 1.0.0. The
+broader collection remains under active development: more instruments will be
+added, their licensing and metadata decisions remain open, and a future source
+release will pin an exact MoDaCor version across the collection.
 
 ## Instrument catalogue
 
 | Facility | Instrument | Current contents | Status |
 | --- | --- | --- | --- |
-| BAM | MOUSE | Ten-configuration sample/background pair and solids pipelines | Runnable example |
+| BAM | MOUSE | Ten-configuration sample/background pair and solids pipelines | [Dataset 1.0.0 published](https://doi.org/10.5281/zenodo.22872281) |
 | DLS | I22 | Four SAXS/WAXS measurements, background, calibration, masks, and four focused notebooks | Runnable batch plus Buffer/HDF/Tiled chunk demonstrations; full archive run pending |
 | BAM | SAXSess I | Six N008 aliquots with complete manual-instrument calibration set | Runnable absolute-intensity example |
 | BAM | SAXSess II | Placeholder | Planned |
@@ -91,17 +89,17 @@ directories automatically and write generated files below `work/`.
 
 Each implemented instrument has a tracked `data-manifest.json`. It records the
 immutable Zenodo archive, archive checksum, and checksums of all extracted
-files. After the first data release is published, download one instrument with:
+files. The MOUSE dataset is currently available with:
 
 ```bash
 python tools/data_repository.py download BAM/MOUSE
-python tools/data_repository.py download DLS/I22
 ```
 
-Use `download --all` to retrieve every published instrument dataset. During
+Until the remaining instrument datasets are published, download available
+instruments individually rather than using `download --all`. During
 development, before Zenodo URLs are assigned, contributors can populate the
-ignored `data/` directories directly and update their manifests with
-`python tools/data_repository.py update-manifests`.
+ignored `data/` directories directly and update their manifests with `python
+tools/data_repository.py update-manifests`.
 
 ## Validation
 
@@ -131,6 +129,8 @@ and release workflow.
 
 ## Release status
 
-Do not cite this working tree as a released dataset. Citation text, authors,
-licenses for code and data, facility acknowledgements, checksums, and the
-Zenodo DOI will be added during the release-freeze phase.
+The BAM MOUSE data are released as version 1.0.0 under the version-specific DOI
+[10.5281/zenodo.22872281](https://doi.org/10.5281/zenodo.22872281). See its
+instrument README for the preferred citation. The repository source and the
+other instrument datasets remain development material until separately
+released.

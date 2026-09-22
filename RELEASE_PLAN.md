@@ -20,7 +20,7 @@ freezes a reproducible archival snapshot only after the collection is complete.
 
 ## Phase 2 — Stabilize the current examples
 
-- [ ] Rerun MOUSE from a clean copy and record its expected outputs/runtime.
+- [x] Rerun MOUSE from a clean copy and record its expected outputs/runtime.
 - [ ] Rerun the complete I22 SAXS and WAXS server workflow from a clean copy.
 - [ ] Reconcile all notebook prose with the tested MoDaCor release.
 - [ ] Decide whether notebooks are released with all outputs cleared or with a

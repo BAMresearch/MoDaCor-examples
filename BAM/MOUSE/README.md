@@ -57,10 +57,15 @@ referenced background has the same configuration number.
 
 ## Current validation status
 
-Using MoDaCor 1.8.0, repository validation passes, all ten sample/background
-pairs resolve to matching configurations, and the 42-step pipeline prepares.
-The complete ten-file runtime-server loop still needs to be rerun and its
-runtime and output inventory recorded for this release.
+Using MoDaCor 1.8.0, MOUSE data and manifest verification passes, all ten
+sample/background pairs resolve to matching configurations, and the 42-step
+pipeline prepares. A complete runtime-server run processed all ten
+configurations successfully in approximately 30 seconds on the validation
+system. It produced 11 files below `work/output/`: ten configuration-specific
+`MOUSE_20260903_2_*_stacked_modacor_result.h5` files and
+`modacor_server.log`. Runtime will vary with the system and storage device.
+On 2026-09-22, the published archive was also downloaded through the manifest
+into a clean checkout; all 20 inputs passed size and SHA-256 verification.
 
 ## Supplementary poster visualizations and testing
 
@@ -89,12 +94,13 @@ The retained poster results were originally processed on 2026-09-15 using
 MoDaCor 1.8.0; the same provenance is recorded inside every notebook so a later
 run with a newer version can be identified clearly.
 
-## Known limitations and release gates
+## Known limitations and future review
 
 - The notebook lists correction inputs whose uncertainty datasets are not yet
   available upstream.
 - The main solids pipeline does not yet route capillary samples through the
   demonstrated capillary correction, and displaced-dispersant handling remains
   future work.
-- Version 1.0.0 was published with embedded proposal and user metadata
-  retained; this should be reviewed again before publishing a later version.
+- Redistribution under CC BY 4.0 and retention of the embedded proposal and
+  user metadata were reviewed and approved for version 1.0.0. This decision
+  should be reviewed again before publishing a later version.
