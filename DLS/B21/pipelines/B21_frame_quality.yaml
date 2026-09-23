@@ -1,6 +1,8 @@
 # Apply only after all coarse curves for one complete B21 measurement have
 # been assembled. The q thresholds and factors are provisional settings that
 # must be reviewed against representative batch and SEC-SAXS measurements.
+# The leading dimensions enumerate frames that must remain distinct, so this
+# pass intentionally does not reduce them with axes: non_data.
 name: B21 complete-measurement frame quality
 description: >-
   Load the assembled frame-wise coarse I(q) curves for one B21 measurement and

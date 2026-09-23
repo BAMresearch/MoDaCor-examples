@@ -4,13 +4,18 @@
 SEC-SAXS processing. It attaches the fixed mask and geometry, creates a
 frame-wise threshold mask for negative and max-pegged detector values, creates
 a non-destructive branch, and computes 50 coarse logarithmic I(q) bins per
-frame. It deliberately stops before frame averaging and background subtraction.
+frame. The static calibration image and mask use `axes: non_data` to normalize
+any leading dimensions to their declared detector rank; this is currently a
+no-op for the packaged 2D inputs. The dynamic detector stack deliberately stops
+before frame averaging and background subtraction.
 
 `B21_frame_quality.yaml` is the compact second pass. After the chunked curves
 for one complete measurement have been assembled, it loads those arrays and
 runs `B21FrameQualityFilter` once. Its maximum high-q and minimum low-q
 references are measurement-wide. Running it inside each raw-data chunk would
 make the result depend on chunk boundaries.
+Its leading dimensions identify frames, so rank-based reduction is
+intentionally not applied in this pass.
 
 The supplied DAWN pipeline remains unchanged at
 `../data/processing/processing_pipeline_140926.nxs` as provenance and

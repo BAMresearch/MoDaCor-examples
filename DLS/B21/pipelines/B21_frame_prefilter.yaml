@@ -44,10 +44,32 @@ steps:
       units_override: dimensionless
       rank_of_data: 2
 
+  RD_static_signal:
+    module: ReduceDimensionality
+    short_title: Normalize calibration image to its data rank
+    requires_steps: [PD_static_signal]
+    configuration:
+      axes: non_data
+      use_weights: false
+      nan_policy: propagate
+      reduction: mean
+      with_processing_keys: [static]
+
+  RM_static_mask:
+    module: ReduceMask
+    short_title: Normalize instrument mask to its data rank
+    requires_steps: [PD_static_mask]
+    configuration:
+      with_processing_keys: [static]
+      source_mask_key: instrument_mask
+      target_mask_key: instrument_mask
+      axes: non_data
+      reduction: any
+
   PC_static:
     module: PixelCoordinates3D
     short_title: Resolve fixed B21 detector coordinates
-    requires_steps: [PD_static_signal]
+    requires_steps: [RD_static_signal]
     configuration:
       with_processing_keys: [static]
       detector_frame:
@@ -92,7 +114,7 @@ steps:
   CP_static_sample:
     module: CopyDataBundleKeys
     short_title: Attach fixed B21 mask and geometry
-    requires_steps: [PD_sample, PD_static_mask, IP_static]
+    requires_steps: [PD_sample, RM_static_mask, IP_static]
     configuration:
       with_processing_keys: [sample, static]
       data_keys: [instrument_mask, Q, Psi, pixel_index]

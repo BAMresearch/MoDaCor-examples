@@ -167,11 +167,13 @@ which is ignored by Git.
 Using MoDaCor 1.8.0, the clean notebook discovers all eight expected
 measurements, validates the `(1, 21, 2167, 2070)` `uint32` detector stacks,
 constructs 40 five-frame-or-smaller work items, and successfully starts and
-stops its local runtime. The eleven-step first pass combines the supplied
-instrument mask with a frame-wise threshold mask for negative and max-pegged
-Eiger values. Five selected runs have completed all 25 server-side detector
-chunks and produced `(1, 21, 50)` coarse curves and Q coordinates. The compact
-quality pass accepts all 21 frames in each run with the provisional thresholds;
+stops its local runtime. The thirteen-step first pass first normalizes the
+static calibration image and mask to their declared detector rank, then
+combines the supplied instrument mask with a frame-wise threshold mask for
+negative and max-pegged Eiger values. Five selected runs have completed all 25
+server-side detector chunks and produced `(1, 21, 50)` coarse curves and Q
+coordinates. The compact quality pass accepts all 21 frames in each run with
+the provisional thresholds;
 observed high-q totals span 0.9885–1.0000 of their per-run maxima and low-q
 totals span 1.0000–1.0202 of their per-run minima. The development manifest
 verifies all 211 packaged files (368,610,024 bytes), and all B21 NeXus external
