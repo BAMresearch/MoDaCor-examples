@@ -106,7 +106,7 @@ steps:
     short_title: Average SAXS frames
     requires_steps: [FL_sample]
     configuration:
-      axes: [0, 1]
+      axes: non_data
       use_weights: true
       nan_policy: propagate
       reduction: mean
@@ -120,7 +120,7 @@ steps:
       with_processing_keys: [sample]
       source_mask_key: raw_count_mask
       target_mask_key: raw_count_mask
-      axes: [0, 1]
+      axes: non_data
       reduction: any
 
   PU_background:
@@ -178,7 +178,7 @@ steps:
     short_title: Average background frames
     requires_steps: [FL_background]
     configuration:
-      axes: [0, 1]
+      axes: non_data
       use_weights: true
       nan_policy: propagate
       reduction: mean
@@ -192,7 +192,7 @@ steps:
       with_processing_keys: [background]
       source_mask_key: raw_count_mask
       target_mask_key: raw_count_mask
-      axes: [0, 1]
+      axes: non_data
       reduction: any
 
   BG:

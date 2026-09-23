@@ -184,3 +184,19 @@ def test_waxs_nosecone_profiles_select_aluminium_correction() -> None:
     assert standard_steps["AL"]["configuration"]["thickness_units"] == "cm"
     assert standard_steps["AL"]["configuration"]["apply_as"] == "divide"
     assert standard_steps["PO"]["requires_steps"] == ["AL"]
+
+
+def test_all_i22_reductions_follow_declared_data_rank() -> None:
+    pipeline_dir = Path(__file__).resolve().parents[1] / "pipelines"
+    for pipeline_path in sorted(pipeline_dir.glob("*.yaml")):
+        steps = yaml.safe_load(pipeline_path.read_text())["steps"]
+        reductions = {
+            step_id: step
+            for step_id, step in steps.items()
+            if step["module"] in {"ReduceDimensionality", "ReduceMask"}
+        }
+        assert reductions, f"{pipeline_path.name} has no rank-aware reduction steps"
+        for step_id, step in reductions.items():
+            assert step["configuration"]["axes"] == "non_data", (
+                f"{pipeline_path.name}:{step_id} hard-codes reduction axes"
+            )

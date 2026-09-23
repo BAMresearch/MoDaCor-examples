@@ -73,7 +73,7 @@ steps:
     short_title: Average fastest dimension
     requires_steps: [TI_sample]
     configuration:
-      axes: [0, 1]
+      axes: non_data
       use_weights: true
       nan_policy: propagate
       reduction: mean
@@ -175,4 +175,3 @@ steps:
       multiplier_source: sample::/modacor/calibration/absolute_intensity_factor
       multiplier_units_source: sample::/modacor/calibration/absolute_intensity_factor@units
       with_processing_keys: [sample]
-

@@ -72,7 +72,7 @@ steps:
     short_title: Average fastest dimension
     requires_steps: [TI_sample]
     configuration:
-      axes: [0, 1]
+      axes: non_data
       use_weights: true
       nan_policy: propagate
       reduction: mean
