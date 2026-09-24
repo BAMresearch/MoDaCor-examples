@@ -319,10 +319,29 @@ steps:
       polarization_angular_offset: 0.0
       polarization_angular_offset_units: degree
 
+  CP_2D:
+    module: CopyDataBundleKeys
+    short_title: Copy SAXS data for the live 2D plot
+    requires_steps: [PO]
+    configuration:
+      with_processing_keys: [sample_2d, sample]
+      data_keys: [signal, mask]
+      copy: true
+
+  MK_apply_2D:
+    module: ApplyMask
+    short_title: Apply SAXS mask to the live 2D plot copy
+    requires_steps: [CP_2D]
+    configuration:
+      with_processing_keys: [sample_2d]
+      mask_key: mask
+      basedata_to_mask: [signal]
+      masked_value: nan
+
   AV:
     module: IndexedAverager
     short_title: SAXS azimuthal integration
-    requires_steps: [SV_2D, PL_2D]
+    requires_steps: [SV_2D, CP_2D]
     configuration:
       averaging_direction: azimuthal
       use_signal_weights: true
@@ -378,10 +397,10 @@ steps:
   PL_2D:
     module: Plot2DVisualization
     short_title: Live SAXS corrected 2D image
-    requires_steps: [PO]
+    requires_steps: [MK_apply_2D]
     configuration:
       target: plots::saxs-2d
-      data_path: /sample/signal/signal
+      data_path: /sample_2d/signal/signal
       title: SAXS corrected 2D detector image
       colormap: Viridis
 

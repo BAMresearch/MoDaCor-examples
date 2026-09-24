@@ -200,3 +200,45 @@ def test_all_i22_reductions_follow_declared_data_rank() -> None:
             assert step["configuration"]["axes"] == "non_data", (
                 f"{pipeline_path.name}:{step_id} hard-codes reduction axes"
             )
+def test_operational_2d_plots_use_an_independent_masked_copy() -> None:
+    project_dir = Path(__file__).resolve().parents[1]
+    pipeline_paths = sorted(
+        path
+        for path in (project_dir / "pipelines").glob("*.yaml")
+        if "crosscheck" not in path.stem.lower()
+    )
+
+    pipelines_with_2d_plots = []
+    for pipeline_path in pipeline_paths:
+        steps = yaml.safe_load(pipeline_path.read_text())["steps"]
+        plot_steps = [step for step in steps.values() if step["module"] == "Plot2DVisualization"]
+        if not plot_steps:
+            continue
+
+        pipelines_with_2d_plots.append(pipeline_path.name)
+        assert len(plot_steps) == 1
+        assert steps["CP_2D"]["module"] == "CopyDataBundleKeys"
+        assert steps["CP_2D"]["requires_steps"] == ["PO"]
+        assert steps["CP_2D"]["configuration"] == {
+            "with_processing_keys": ["sample_2d", "sample"],
+            "data_keys": ["signal", "mask"],
+            "copy": True,
+        }
+        assert steps["MK_apply_2D"]["module"] == "ApplyMask"
+        assert steps["MK_apply_2D"]["requires_steps"] == ["CP_2D"]
+        assert steps["MK_apply_2D"]["configuration"] == {
+            "with_processing_keys": ["sample_2d"],
+            "mask_key": "mask",
+            "basedata_to_mask": ["signal"],
+            "masked_value": "nan",
+        }
+
+        plot_step = plot_steps[0]
+        assert plot_step["requires_steps"] == ["MK_apply_2D"]
+        assert plot_step["configuration"]["data_path"] == "/sample_2d/signal/signal"
+        assert "PL_2D" not in steps["AV"]["requires_steps"]
+
+    assert pipelines_with_2d_plots == [
+        "I22_SAXS_solids_operando.yaml",
+        "I22_WAXS_solids_operando.yaml",
+    ]
