@@ -111,6 +111,15 @@ steps:
       use_weights: true
       nan_policy: propagate
       reduction: mean
+      uncertainty_estimation:
+        collision_policy: propagate
+        estimators:
+          frame_STD:
+            method: standard_deviation
+            ddof: 1
+          frame_SEM:
+            method: standard_error_mean
+            ddof: 1
       with_processing_keys: [sample]
 
   MK_raw_sample_reduce:
@@ -183,6 +192,15 @@ steps:
       use_weights: true
       nan_policy: propagate
       reduction: mean
+      uncertainty_estimation:
+        collision_policy: propagate
+        estimators:
+          frame_STD:
+            method: standard_deviation
+            ddof: 1
+          frame_SEM:
+            method: standard_error_mean
+            ddof: 1
       with_processing_keys: [background]
 
   MK_raw_background_reduce:

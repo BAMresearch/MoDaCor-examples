@@ -186,6 +186,26 @@ def test_waxs_nosecone_profiles_select_aluminium_correction() -> None:
     assert standard_steps["PO"]["requires_steps"] == ["AL"]
 
 
+def test_operational_frame_averages_estimate_std_and_sem() -> None:
+    project_dir = Path(__file__).resolve().parents[1]
+    pipeline_files = [
+        "I22_SAXS_solids_operando.yaml",
+        *WAXS_PIPELINES.values(),
+    ]
+    expected = {
+        "collision_policy": "propagate",
+        "estimators": {
+            "frame_STD": {"method": "standard_deviation", "ddof": 1},
+            "frame_SEM": {"method": "standard_error_mean", "ddof": 1},
+        },
+    }
+
+    for filename in pipeline_files:
+        steps = yaml.safe_load((project_dir / "pipelines" / filename).read_text())["steps"]
+        for step_id in ("FA_sample", "FA_background"):
+            assert steps[step_id]["configuration"]["uncertainty_estimation"] == expected
+
+
 def test_all_i22_reductions_follow_declared_data_rank() -> None:
     pipeline_dir = Path(__file__).resolve().parents[1] / "pipelines"
     for pipeline_path in sorted(pipeline_dir.glob("*.yaml")):
