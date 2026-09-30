@@ -38,8 +38,10 @@ MoDaCor kernel, and choose one focused notebook:
 
 - `I22_USAXS_server.ipynb` preprocesses the four-scan USAXS acquisitions and
   runs the signed-Q correction, transmission, background-remapping, diode
-  scaling, and indexed averaging pipeline. See `USAXS_PROCESSING_DESIGN.md`
-  for the processing contract and provisional settings.
+  scaling, and indexed averaging pipeline. Its compact `step_blocks` document
+  expands to 123 independently traceable execution steps. See
+  `USAXS_PROCESSING_DESIGN.md` for the processing contract and provisional
+  settings.
 - `I22_solids_server.ipynb` performs ordinary non-chunked batch processing.
 - `I22_solids_chunked_buffer.ipynb` uploads notebook-sliced `BufferSource`
   chunks.

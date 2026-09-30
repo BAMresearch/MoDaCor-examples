@@ -1,7 +1,7 @@
 # I22 USAXS processing design
 
 Status: initial implementation validated 2026-09-29; revision backlog agreed
-2026-09-30
+2026-09-30; priority-1 schema expansion implemented and validated
 
 ## Purpose
 
@@ -40,15 +40,16 @@ implementation where they differ.
 | 5 | 5, 10 | Scale and merge all four series, determine and retain transmission, then subtract the merged background | High | Largest scientific improvement to the current correction chain | Common scale anchor, paired centres, merged-coordinate reduction |
 | 6 | 6 | Validate post-subtraction residuals statistically and at detector/gain handoffs | Medium | Distinguishes harmless negative noise from systematic mismatch | Revised merged pipeline |
 
-The first implementation task should be priority 1: schema-level `for_each`
-step-block expansion. The detailed investigation is recorded in the MoDaCor
-core design note
+Priority 1 is now implemented: schema-level `for_each` step-block expansion.
+The detailed design and implementation record is in the MoDaCor core note
 [`pipeline-foreach-expansion.md`](https://github.com/BAMResearch/MoDaCor/blob/main/docs/development/design/pipeline-foreach-expansion.md).
-It is scientifically neutral, directly addresses pipeline manageability, and
-provides the representation needed for batch loading and the later four-lane
-pipeline rewrite. The priority-0 decisions are recorded here; the `q_min`
-configuration change should be made alongside the next pipeline revision so
-that the tracked pipeline and its validation results change together.
+The compact pipeline is 496 rather than 1,255 lines and expands to the same
+123 ordinary steps. It reproduces the prior pooled signal, pooled Q, and
+transmission scalar exactly for sample scans 978497--978500 against background
+scans 977724--977727. The priority-0 decisions are recorded here; the `q_min`
+configuration change should be made alongside the next scientific pipeline
+revision so that the tracked pipeline and its validation results change
+together.
 
 ### 1. Eight diode readouts, not twelve scientific inputs
 

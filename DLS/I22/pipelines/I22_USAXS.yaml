@@ -6,1250 +6,491 @@ description: >-
   times explicitly. Transmission uses the full scan; the final scattering
   curve uses the negative analyser wing. The high-gain front saturation
   threshold is provisional and must be reviewed for new acquisitions.
+
+step_blocks:
+  prepare_diode:
+    for_each:
+      SLF:
+        processing_key: SLF
+        signal_location: sample::/entry1/low_gain_front/signal
+        signal_units_location: sample::/entry1/low_gain_front/signal@units
+        uncertainties_sources:
+          subread_sem: sample::/entry1/low_gain_front/subread_sem
+          dark_offset_sem: sample::/entry1/low_gain_front/dark_offset_sem
+        yaw_location: sample::/entry1/low_gain_front/yaw
+        yaw_units_location: sample::/entry1/low_gain_front/yaw@units
+        energy_location: sample::/entry1/low_gain_front/energy
+        energy_units_location: sample::/entry1/low_gain_front/energy@units
+        count_time_location: sample::/entry1/low_gain_front/count_time
+        count_time_units_location: sample::/entry1/low_gain_front/count_time@units
+        upper_bound: null
+      SLR:
+        processing_key: SLR
+        signal_location: sample::/entry1/low_gain_rear/signal
+        signal_units_location: sample::/entry1/low_gain_rear/signal@units
+        uncertainties_sources:
+          subread_sem: sample::/entry1/low_gain_rear/subread_sem
+          dark_offset_sem: sample::/entry1/low_gain_rear/dark_offset_sem
+        yaw_location: sample::/entry1/low_gain_rear/yaw
+        yaw_units_location: sample::/entry1/low_gain_rear/yaw@units
+        energy_location: sample::/entry1/low_gain_rear/energy
+        energy_units_location: sample::/entry1/low_gain_rear/energy@units
+        count_time_location: sample::/entry1/low_gain_rear/count_time
+        count_time_units_location: sample::/entry1/low_gain_rear/count_time@units
+        upper_bound: null
+      SHF:
+        processing_key: SHF
+        signal_location: sample::/entry1/high_gain_front/signal
+        signal_units_location: sample::/entry1/high_gain_front/signal@units
+        uncertainties_sources:
+          subread_sem: sample::/entry1/high_gain_front/subread_sem
+          dark_offset_sem: sample::/entry1/high_gain_front/dark_offset_sem
+        yaw_location: sample::/entry1/high_gain_front/yaw
+        yaw_units_location: sample::/entry1/high_gain_front/yaw@units
+        energy_location: sample::/entry1/high_gain_front/energy
+        energy_units_location: sample::/entry1/high_gain_front/energy@units
+        count_time_location: sample::/entry1/high_gain_front/count_time
+        count_time_units_location: sample::/entry1/high_gain_front/count_time@units
+        upper_bound: 1.2e-7
+      SHR:
+        processing_key: SHR
+        signal_location: sample::/entry1/high_gain_rear/signal
+        signal_units_location: sample::/entry1/high_gain_rear/signal@units
+        uncertainties_sources:
+          subread_sem: sample::/entry1/high_gain_rear/subread_sem
+          dark_offset_sem: sample::/entry1/high_gain_rear/dark_offset_sem
+        yaw_location: sample::/entry1/high_gain_rear/yaw
+        yaw_units_location: sample::/entry1/high_gain_rear/yaw@units
+        energy_location: sample::/entry1/high_gain_rear/energy
+        energy_units_location: sample::/entry1/high_gain_rear/energy@units
+        count_time_location: sample::/entry1/high_gain_rear/count_time
+        count_time_units_location: sample::/entry1/high_gain_rear/count_time@units
+        upper_bound: null
+      BLF:
+        processing_key: BLF
+        signal_location: background::/entry1/low_gain_front/signal
+        signal_units_location: background::/entry1/low_gain_front/signal@units
+        uncertainties_sources:
+          subread_sem: background::/entry1/low_gain_front/subread_sem
+          dark_offset_sem: background::/entry1/low_gain_front/dark_offset_sem
+        yaw_location: background::/entry1/low_gain_front/yaw
+        yaw_units_location: background::/entry1/low_gain_front/yaw@units
+        energy_location: background::/entry1/low_gain_front/energy
+        energy_units_location: background::/entry1/low_gain_front/energy@units
+        count_time_location: background::/entry1/low_gain_front/count_time
+        count_time_units_location: background::/entry1/low_gain_front/count_time@units
+        upper_bound: null
+      BLR:
+        processing_key: BLR
+        signal_location: background::/entry1/low_gain_rear/signal
+        signal_units_location: background::/entry1/low_gain_rear/signal@units
+        uncertainties_sources:
+          subread_sem: background::/entry1/low_gain_rear/subread_sem
+          dark_offset_sem: background::/entry1/low_gain_rear/dark_offset_sem
+        yaw_location: background::/entry1/low_gain_rear/yaw
+        yaw_units_location: background::/entry1/low_gain_rear/yaw@units
+        energy_location: background::/entry1/low_gain_rear/energy
+        energy_units_location: background::/entry1/low_gain_rear/energy@units
+        count_time_location: background::/entry1/low_gain_rear/count_time
+        count_time_units_location: background::/entry1/low_gain_rear/count_time@units
+        upper_bound: null
+      BHF:
+        processing_key: BHF
+        signal_location: background::/entry1/high_gain_front/signal
+        signal_units_location: background::/entry1/high_gain_front/signal@units
+        uncertainties_sources:
+          subread_sem: background::/entry1/high_gain_front/subread_sem
+          dark_offset_sem: background::/entry1/high_gain_front/dark_offset_sem
+        yaw_location: background::/entry1/high_gain_front/yaw
+        yaw_units_location: background::/entry1/high_gain_front/yaw@units
+        energy_location: background::/entry1/high_gain_front/energy
+        energy_units_location: background::/entry1/high_gain_front/energy@units
+        count_time_location: background::/entry1/high_gain_front/count_time
+        count_time_units_location: background::/entry1/high_gain_front/count_time@units
+        upper_bound: 1.2e-7
+      BHR:
+        processing_key: BHR
+        signal_location: background::/entry1/high_gain_rear/signal
+        signal_units_location: background::/entry1/high_gain_rear/signal@units
+        uncertainties_sources:
+          subread_sem: background::/entry1/high_gain_rear/subread_sem
+          dark_offset_sem: background::/entry1/high_gain_rear/dark_offset_sem
+        yaw_location: background::/entry1/high_gain_rear/yaw
+        yaw_units_location: background::/entry1/high_gain_rear/yaw@units
+        energy_location: background::/entry1/high_gain_rear/energy
+        energy_units_location: background::/entry1/high_gain_rear/energy@units
+        count_time_location: background::/entry1/high_gain_rear/count_time
+        count_time_units_location: background::/entry1/high_gain_rear/count_time@units
+        upper_bound: null
+    steps:
+      load_signal:
+        module: AppendProcessingData
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: signal
+          signal_location: "${signal_location}"
+          units_location: "${signal_units_location}"
+          rank_of_data: 1
+          uncertainties_sources: "${uncertainties_sources}"
+      load_yaw:
+        module: AppendProcessingData
+        requires_steps: [.load_signal]
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: yaw
+          signal_location: "${yaw_location}"
+          units_location: "${yaw_units_location}"
+          rank_of_data: 1
+      load_energy:
+        module: AppendProcessingData
+        requires_steps: [.load_yaw]
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: energy
+          signal_location: "${energy_location}"
+          units_location: "${energy_units_location}"
+          rank_of_data: 0
+      dynamic_mask:
+        module: ThresholdMask
+        requires_steps: [.load_energy]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          source_basedata_key: signal
+          target_mask_key: Mask
+          lower_bound: 0
+          upper_bound: "${upper_bound}"
+          mask_mode: outside
+      normalize_time:
+        module: Divide
+        requires_steps: [.dynamic_mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          divisor_source: "${count_time_location}"
+          divisor_units_source: "${count_time_units_location}"
+
+  prepare_monitor:
+    for_each:
+      SLI0:
+        processing_key: SLI0
+        signal_location: sample::/entry1/low_gain_front/i0
+        units_location: sample::/entry1/low_gain_front/i0@units
+        uncertainty_location: sample::/entry1/low_gain_front/i0_subread_sem
+        count_time_location: sample::/entry1/low_gain_front/i0_count_time
+        count_time_units_location: sample::/entry1/low_gain_front/i0_count_time@units
+      SHI0:
+        processing_key: SHI0
+        signal_location: sample::/entry1/high_gain_front/i0
+        units_location: sample::/entry1/high_gain_front/i0@units
+        uncertainty_location: sample::/entry1/high_gain_front/i0_subread_sem
+        count_time_location: sample::/entry1/high_gain_front/i0_count_time
+        count_time_units_location: sample::/entry1/high_gain_front/i0_count_time@units
+      BLI0:
+        processing_key: BLI0
+        signal_location: background::/entry1/low_gain_front/i0
+        units_location: background::/entry1/low_gain_front/i0@units
+        uncertainty_location: background::/entry1/low_gain_front/i0_subread_sem
+        count_time_location: background::/entry1/low_gain_front/i0_count_time
+        count_time_units_location: background::/entry1/low_gain_front/i0_count_time@units
+      BHI0:
+        processing_key: BHI0
+        signal_location: background::/entry1/high_gain_front/i0
+        units_location: background::/entry1/high_gain_front/i0@units
+        uncertainty_location: background::/entry1/high_gain_front/i0_subread_sem
+        count_time_location: background::/entry1/high_gain_front/i0_count_time
+        count_time_units_location: background::/entry1/high_gain_front/i0_count_time@units
+    steps:
+      load:
+        module: AppendProcessingData
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: signal
+          signal_location: "${signal_location}"
+          units_location: "${units_location}"
+          rank_of_data: 1
+          uncertainties_sources:
+            i0_subread_sem: "${uncertainty_location}"
+      mask:
+        module: ThresholdMask
+        requires_steps: [.load]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          source_basedata_key: signal
+          target_mask_key: Mask
+          upper_bound: 0
+          mask_mode: inside
+      apply_mask:
+        module: ApplyMask
+        requires_steps: [.mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          mask_key: Mask
+          basedata_to_mask: [signal]
+          masked_value: nan
+      normalize_time:
+        module: Divide
+        requires_steps: [.apply_mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          divisor_source: "${count_time_location}"
+          divisor_units_source: "${count_time_units_location}"
+
+  normalize_flux:
+    for_each:
+      SLF: {diode: SLF, monitor: SLI0, requires: [prepare_diode.SLF.normalize_time, prepare_monitor.SLI0.normalize_time]}
+      SLR: {diode: SLR, monitor: SLI0, requires: [prepare_diode.SLR.normalize_time, prepare_monitor.SLI0.normalize_time]}
+      SHF: {diode: SHF, monitor: SHI0, requires: [prepare_diode.SHF.normalize_time, prepare_monitor.SHI0.normalize_time]}
+      SHR: {diode: SHR, monitor: SHI0, requires: [prepare_diode.SHR.normalize_time, prepare_monitor.SHI0.normalize_time]}
+      BLF: {diode: BLF, monitor: BLI0, requires: [prepare_diode.BLF.normalize_time, prepare_monitor.BLI0.normalize_time]}
+      BLR: {diode: BLR, monitor: BLI0, requires: [prepare_diode.BLR.normalize_time, prepare_monitor.BLI0.normalize_time]}
+      BHF: {diode: BHF, monitor: BHI0, requires: [prepare_diode.BHF.normalize_time, prepare_monitor.BHI0.normalize_time]}
+      BHR: {diode: BHR, monitor: BHI0, requires: [prepare_diode.BHR.normalize_time, prepare_monitor.BHI0.normalize_time]}
+    steps:
+      divide:
+        module: DivideDatabundles
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${diode}", "${monitor}"]
+          dividend_data_key: signal
+          divisor_data_key: signal
+
+  find_center:
+    for_each:
+      SLR: {processing_key: SLR, requires: [normalize_flux.SLR.divide]}
+      SHR: {processing_key: SHR, requires: [normalize_flux.SHR.divide]}
+      BLR: {processing_key: BLR, requires: [normalize_flux.BLR.divide]}
+      BHR: {processing_key: BHR, requires: [normalize_flux.BHR.divide]}
+    steps:
+      center:
+        module: FindCenterOfMass1D
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          signal_key: signal
+          axis_key: yaw
+          mask_key: Mask
+          half_width: 25
+          width_units: microradian
+          baseline: 0
+          maximum_iterations: 5
+          convergence_tolerance: 0.001
+          output_key: beam_center
+          diagnostic_prefix: centroid
+
+  copy_center:
+    for_each:
+      SLF: {front: SLF, rear: SLR, requires: [normalize_flux.SLF.divide, find_center.SLR.center]}
+      SHF: {front: SHF, rear: SHR, requires: [normalize_flux.SHF.divide, find_center.SHR.center]}
+      BLF: {front: BLF, rear: BLR, requires: [normalize_flux.BLF.divide, find_center.BLR.center]}
+      BHF: {front: BHF, rear: BHR, requires: [normalize_flux.BHF.divide, find_center.BHR.center]}
+    steps:
+      copy:
+        module: CopyDataBundleKeys
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${front}", "${rear}"]
+          data_keys: [beam_center]
+          copy: true
+
+  convert_q:
+    for_each:
+      SLF: {processing_key: SLF, requires: [copy_center.SLF.copy]}
+      SLR: {processing_key: SLR, requires: [find_center.SLR.center]}
+      SHF: {processing_key: SHF, requires: [copy_center.SHF.copy]}
+      SHR: {processing_key: SHR, requires: [find_center.SHR.center]}
+      BLF: {processing_key: BLF, requires: [copy_center.BLF.copy]}
+      BLR: {processing_key: BLR, requires: [find_center.BLR.center]}
+      BHF: {processing_key: BHF, requires: [copy_center.BHF.copy]}
+      BHR: {processing_key: BHR, requires: [find_center.BHR.center]}
+    steps:
+      q:
+        module: YawToQ
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          yaw_key: yaw
+          energy_key: energy
+          center_key: beam_center
+          output_key: Q
+          output_units: 1/nm
+
+  integrate_transmission:
+    for_each:
+      sample_front: {processing_key: SLF, output_key: sample_integral, requires: [convert_q.SLF.q]}
+      background_front: {processing_key: BLF, output_key: background_integral, requires: [convert_q.BLF.q]}
+      sample_rear: {processing_key: SLR, output_key: sample_rear_integral, requires: [convert_q.SLR.q]}
+      background_rear: {processing_key: BLR, output_key: background_rear_integral, requires: [convert_q.BLR.q]}
+    steps:
+      integrate:
+        module: Integrate1D
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          signal_key: signal
+          axis_key: yaw
+          mask_key: Mask
+          method: trapezoid
+          sort_axis: true
+          duplicate_axis: mean
+          output_processing_keys: ["${output_key}"]
+
+  determine_transmission:
+    for_each:
+      front:
+        numerator: sample_integral
+        denominator: background_integral
+        requires: [integrate_transmission.sample_front.integrate, integrate_transmission.background_front.integrate]
+      rear:
+        numerator: sample_rear_integral
+        denominator: background_rear_integral
+        requires: [integrate_transmission.sample_rear.integrate, integrate_transmission.background_rear.integrate]
+    steps:
+      divide:
+        module: DivideDatabundles
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${numerator}", "${denominator}"]
+          dividend_data_key: signal
+          divisor_data_key: signal
+
+  normalize_transmission:
+    for_each:
+      SLF: {processing_key: SLF, requires: [convert_q.SLF.q, determine_transmission.front.divide]}
+      SLR: {processing_key: SLR, requires: [convert_q.SLR.q, determine_transmission.front.divide]}
+      SHF: {processing_key: SHF, requires: [convert_q.SHF.q, determine_transmission.front.divide]}
+      SHR: {processing_key: SHR, requires: [convert_q.SHR.q, determine_transmission.front.divide]}
+    steps:
+      divide:
+        module: DivideDatabundles
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${processing_key}", sample_integral]
+          dividend_data_key: signal
+          divisor_data_key: signal
+
+  prepare_final_wing:
+    for_each:
+      SLF: {sample: SLF, background: BLF, requires: [normalize_transmission.SLF.divide, convert_q.BLF.q]}
+      SLR: {sample: SLR, background: BLR, requires: [normalize_transmission.SLR.divide, convert_q.BLR.q]}
+      SHF: {sample: SHF, background: BHF, requires: [normalize_transmission.SHF.divide, convert_q.BHF.q]}
+      SHR: {sample: SHR, background: BHR, requires: [normalize_transmission.SHR.divide, convert_q.BHR.q]}
+    steps:
+      subtract_background:
+        module: SubtractInterpolated1D
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${sample}", "${background}"]
+          signal_key: signal
+          axis_key: Q
+          mask_key: Mask
+          mode: nearest
+          output_signal_key: signal
+          output_mask_key: remap_mask
+      preserve_wings:
+        module: CopyDataBundleKeys
+        requires_steps: [.subtract_background]
+        configuration:
+          with_processing_keys: ["${sample}", "${sample}"]
+          key_map:
+            signal: both_wings_signal
+            Q: signed_Q
+      select_negative:
+        module: ThresholdMask
+        requires_steps: [.preserve_wings]
+        configuration:
+          with_processing_keys: ["${sample}"]
+          source_basedata_key: Q
+          target_mask_key: wing_mask
+          lower_bound: 0
+          mask_mode: inside
+      combine_masks:
+        module: BitwiseOrMasks
+        requires_steps: [.select_negative]
+        configuration:
+          with_processing_keys: ["${sample}"]
+          target_mask_key: Mask
+          source_mask_keys: [remap_mask, wing_mask]
+      apply_mask:
+        module: ApplyMask
+        requires_steps: [.combine_masks]
+        configuration:
+          with_processing_keys: ["${sample}"]
+          mask_key: Mask
+          basedata_to_mask: [signal]
+          masked_value: nan
+      positive_q:
+        module: Negate
+        requires_steps: [.apply_mask]
+        configuration:
+          with_processing_keys: ["${sample}"]
+          data_key: Q
+
+  scale_readout:
+    for_each:
+      SLR: {processing_key: SLR, requires: [prepare_final_wing.SLR.positive_q, prepare_final_wing.SLF.positive_q]}
+      SHF: {processing_key: SHF, requires: [prepare_final_wing.SHF.positive_q, prepare_final_wing.SLF.positive_q]}
+      SHR: {processing_key: SHR, requires: [prepare_final_wing.SHR.positive_q, prepare_final_wing.SLF.positive_q]}
+    steps:
+      fit:
+        module: FindScaleFactor1D
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${processing_key}", SLF]
+          signal_key: signal
+          independent_axis_key: Q
+          fit_model: lognormal
+          uncertainty_weight_key: subread_sem
+          fit_background: false
+          fit_min_val: 0.0008
+          fit_max_val: 0.03
+          fit_val_units: 1/nm
+          require_overlap: true
+          interpolation_kind: linear
+          use_basedata_weights: true
+          scale_output_key: scale_factor
+      apply:
+        module: MultiplyDatabundles
+        requires_steps: [.fit]
+        configuration:
+          with_processing_keys: ["${processing_key}", "${processing_key}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: scale_factor
+
 steps:
-  PD_SLF:
-    module: AppendProcessingData
-    short_title: "Load SLF diode"
-    requires_steps: []
-    configuration:
-      processing_key: "SLF"
-      databundle_output_key: "signal"
-      signal_location: "sample::/entry1/low_gain_front/signal"
-      units_location: "sample::/entry1/low_gain_front/signal@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        subread_sem: "sample::/entry1/low_gain_front/subread_sem"
-        dark_offset_sem: "sample::/entry1/low_gain_front/dark_offset_sem"
-  PD_SLF_yaw:
-    module: AppendProcessingData
-    short_title: "Load SLF yaw"
-    requires_steps: ["PD_SLF"]
-    configuration:
-      processing_key: "SLF"
-      databundle_output_key: "yaw"
-      signal_location: "sample::/entry1/low_gain_front/yaw"
-      units_location: "sample::/entry1/low_gain_front/yaw@units"
-      rank_of_data: 1
-  PD_SLF_energy:
-    module: AppendProcessingData
-    short_title: "Load SLF energy"
-    requires_steps: ["PD_SLF_yaw"]
-    configuration:
-      processing_key: "SLF"
-      databundle_output_key: "energy"
-      signal_location: "sample::/entry1/low_gain_front/energy"
-      units_location: "sample::/entry1/low_gain_front/energy@units"
-      rank_of_data: 0
-  MK_SLF:
-    module: ThresholdMask
-    short_title: "Dynamic range mask SLF"
-    requires_steps: ["PD_SLF_energy"]
-    configuration:
-      with_processing_keys: ["SLF"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      lower_bound: 0
-      mask_mode: "outside"
-  TI_SLF:
-    module: Divide
-    short_title: "Normalize SLF diode to exposure time"
-    requires_steps: ["MK_SLF"]
-    configuration:
-      with_processing_keys: ["SLF"]
-      divisor_source: "sample::/entry1/low_gain_front/count_time"
-      divisor_units_source: "sample::/entry1/low_gain_front/count_time@units"
-  PD_SLR:
-    module: AppendProcessingData
-    short_title: "Load SLR diode"
-    requires_steps: []
-    configuration:
-      processing_key: "SLR"
-      databundle_output_key: "signal"
-      signal_location: "sample::/entry1/low_gain_rear/signal"
-      units_location: "sample::/entry1/low_gain_rear/signal@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        subread_sem: "sample::/entry1/low_gain_rear/subread_sem"
-        dark_offset_sem: "sample::/entry1/low_gain_rear/dark_offset_sem"
-  PD_SLR_yaw:
-    module: AppendProcessingData
-    short_title: "Load SLR yaw"
-    requires_steps: ["PD_SLR"]
-    configuration:
-      processing_key: "SLR"
-      databundle_output_key: "yaw"
-      signal_location: "sample::/entry1/low_gain_rear/yaw"
-      units_location: "sample::/entry1/low_gain_rear/yaw@units"
-      rank_of_data: 1
-  PD_SLR_energy:
-    module: AppendProcessingData
-    short_title: "Load SLR energy"
-    requires_steps: ["PD_SLR_yaw"]
-    configuration:
-      processing_key: "SLR"
-      databundle_output_key: "energy"
-      signal_location: "sample::/entry1/low_gain_rear/energy"
-      units_location: "sample::/entry1/low_gain_rear/energy@units"
-      rank_of_data: 0
-  MK_SLR:
-    module: ThresholdMask
-    short_title: "Dynamic range mask SLR"
-    requires_steps: ["PD_SLR_energy"]
-    configuration:
-      with_processing_keys: ["SLR"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      lower_bound: 0
-      mask_mode: "outside"
-  TI_SLR:
-    module: Divide
-    short_title: "Normalize SLR diode to exposure time"
-    requires_steps: ["MK_SLR"]
-    configuration:
-      with_processing_keys: ["SLR"]
-      divisor_source: "sample::/entry1/low_gain_rear/count_time"
-      divisor_units_source: "sample::/entry1/low_gain_rear/count_time@units"
-  PD_SHF:
-    module: AppendProcessingData
-    short_title: "Load SHF diode"
-    requires_steps: []
-    configuration:
-      processing_key: "SHF"
-      databundle_output_key: "signal"
-      signal_location: "sample::/entry1/high_gain_front/signal"
-      units_location: "sample::/entry1/high_gain_front/signal@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        subread_sem: "sample::/entry1/high_gain_front/subread_sem"
-        dark_offset_sem: "sample::/entry1/high_gain_front/dark_offset_sem"
-  PD_SHF_yaw:
-    module: AppendProcessingData
-    short_title: "Load SHF yaw"
-    requires_steps: ["PD_SHF"]
-    configuration:
-      processing_key: "SHF"
-      databundle_output_key: "yaw"
-      signal_location: "sample::/entry1/high_gain_front/yaw"
-      units_location: "sample::/entry1/high_gain_front/yaw@units"
-      rank_of_data: 1
-  PD_SHF_energy:
-    module: AppendProcessingData
-    short_title: "Load SHF energy"
-    requires_steps: ["PD_SHF_yaw"]
-    configuration:
-      processing_key: "SHF"
-      databundle_output_key: "energy"
-      signal_location: "sample::/entry1/high_gain_front/energy"
-      units_location: "sample::/entry1/high_gain_front/energy@units"
-      rank_of_data: 0
-  MK_SHF:
-    module: ThresholdMask
-    short_title: "Dynamic range mask SHF"
-    requires_steps: ["PD_SHF_energy"]
-    configuration:
-      with_processing_keys: ["SHF"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      lower_bound: 0
-      mask_mode: "outside"
-      upper_bound: 1.2e-7
-  TI_SHF:
-    module: Divide
-    short_title: "Normalize SHF diode to exposure time"
-    requires_steps: ["MK_SHF"]
-    configuration:
-      with_processing_keys: ["SHF"]
-      divisor_source: "sample::/entry1/high_gain_front/count_time"
-      divisor_units_source: "sample::/entry1/high_gain_front/count_time@units"
-  PD_SHR:
-    module: AppendProcessingData
-    short_title: "Load SHR diode"
-    requires_steps: []
-    configuration:
-      processing_key: "SHR"
-      databundle_output_key: "signal"
-      signal_location: "sample::/entry1/high_gain_rear/signal"
-      units_location: "sample::/entry1/high_gain_rear/signal@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        subread_sem: "sample::/entry1/high_gain_rear/subread_sem"
-        dark_offset_sem: "sample::/entry1/high_gain_rear/dark_offset_sem"
-  PD_SHR_yaw:
-    module: AppendProcessingData
-    short_title: "Load SHR yaw"
-    requires_steps: ["PD_SHR"]
-    configuration:
-      processing_key: "SHR"
-      databundle_output_key: "yaw"
-      signal_location: "sample::/entry1/high_gain_rear/yaw"
-      units_location: "sample::/entry1/high_gain_rear/yaw@units"
-      rank_of_data: 1
-  PD_SHR_energy:
-    module: AppendProcessingData
-    short_title: "Load SHR energy"
-    requires_steps: ["PD_SHR_yaw"]
-    configuration:
-      processing_key: "SHR"
-      databundle_output_key: "energy"
-      signal_location: "sample::/entry1/high_gain_rear/energy"
-      units_location: "sample::/entry1/high_gain_rear/energy@units"
-      rank_of_data: 0
-  MK_SHR:
-    module: ThresholdMask
-    short_title: "Dynamic range mask SHR"
-    requires_steps: ["PD_SHR_energy"]
-    configuration:
-      with_processing_keys: ["SHR"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      lower_bound: 0
-      mask_mode: "outside"
-  TI_SHR:
-    module: Divide
-    short_title: "Normalize SHR diode to exposure time"
-    requires_steps: ["MK_SHR"]
-    configuration:
-      with_processing_keys: ["SHR"]
-      divisor_source: "sample::/entry1/high_gain_rear/count_time"
-      divisor_units_source: "sample::/entry1/high_gain_rear/count_time@units"
-  PD_BLF:
-    module: AppendProcessingData
-    short_title: "Load BLF diode"
-    requires_steps: []
-    configuration:
-      processing_key: "BLF"
-      databundle_output_key: "signal"
-      signal_location: "background::/entry1/low_gain_front/signal"
-      units_location: "background::/entry1/low_gain_front/signal@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        subread_sem: "background::/entry1/low_gain_front/subread_sem"
-        dark_offset_sem: "background::/entry1/low_gain_front/dark_offset_sem"
-  PD_BLF_yaw:
-    module: AppendProcessingData
-    short_title: "Load BLF yaw"
-    requires_steps: ["PD_BLF"]
-    configuration:
-      processing_key: "BLF"
-      databundle_output_key: "yaw"
-      signal_location: "background::/entry1/low_gain_front/yaw"
-      units_location: "background::/entry1/low_gain_front/yaw@units"
-      rank_of_data: 1
-  PD_BLF_energy:
-    module: AppendProcessingData
-    short_title: "Load BLF energy"
-    requires_steps: ["PD_BLF_yaw"]
-    configuration:
-      processing_key: "BLF"
-      databundle_output_key: "energy"
-      signal_location: "background::/entry1/low_gain_front/energy"
-      units_location: "background::/entry1/low_gain_front/energy@units"
-      rank_of_data: 0
-  MK_BLF:
-    module: ThresholdMask
-    short_title: "Dynamic range mask BLF"
-    requires_steps: ["PD_BLF_energy"]
-    configuration:
-      with_processing_keys: ["BLF"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      lower_bound: 0
-      mask_mode: "outside"
-  TI_BLF:
-    module: Divide
-    short_title: "Normalize BLF diode to exposure time"
-    requires_steps: ["MK_BLF"]
-    configuration:
-      with_processing_keys: ["BLF"]
-      divisor_source: "background::/entry1/low_gain_front/count_time"
-      divisor_units_source: "background::/entry1/low_gain_front/count_time@units"
-  PD_BLR:
-    module: AppendProcessingData
-    short_title: "Load BLR diode"
-    requires_steps: []
-    configuration:
-      processing_key: "BLR"
-      databundle_output_key: "signal"
-      signal_location: "background::/entry1/low_gain_rear/signal"
-      units_location: "background::/entry1/low_gain_rear/signal@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        subread_sem: "background::/entry1/low_gain_rear/subread_sem"
-        dark_offset_sem: "background::/entry1/low_gain_rear/dark_offset_sem"
-  PD_BLR_yaw:
-    module: AppendProcessingData
-    short_title: "Load BLR yaw"
-    requires_steps: ["PD_BLR"]
-    configuration:
-      processing_key: "BLR"
-      databundle_output_key: "yaw"
-      signal_location: "background::/entry1/low_gain_rear/yaw"
-      units_location: "background::/entry1/low_gain_rear/yaw@units"
-      rank_of_data: 1
-  PD_BLR_energy:
-    module: AppendProcessingData
-    short_title: "Load BLR energy"
-    requires_steps: ["PD_BLR_yaw"]
-    configuration:
-      processing_key: "BLR"
-      databundle_output_key: "energy"
-      signal_location: "background::/entry1/low_gain_rear/energy"
-      units_location: "background::/entry1/low_gain_rear/energy@units"
-      rank_of_data: 0
-  MK_BLR:
-    module: ThresholdMask
-    short_title: "Dynamic range mask BLR"
-    requires_steps: ["PD_BLR_energy"]
-    configuration:
-      with_processing_keys: ["BLR"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      lower_bound: 0
-      mask_mode: "outside"
-  TI_BLR:
-    module: Divide
-    short_title: "Normalize BLR diode to exposure time"
-    requires_steps: ["MK_BLR"]
-    configuration:
-      with_processing_keys: ["BLR"]
-      divisor_source: "background::/entry1/low_gain_rear/count_time"
-      divisor_units_source: "background::/entry1/low_gain_rear/count_time@units"
-  PD_BHF:
-    module: AppendProcessingData
-    short_title: "Load BHF diode"
-    requires_steps: []
-    configuration:
-      processing_key: "BHF"
-      databundle_output_key: "signal"
-      signal_location: "background::/entry1/high_gain_front/signal"
-      units_location: "background::/entry1/high_gain_front/signal@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        subread_sem: "background::/entry1/high_gain_front/subread_sem"
-        dark_offset_sem: "background::/entry1/high_gain_front/dark_offset_sem"
-  PD_BHF_yaw:
-    module: AppendProcessingData
-    short_title: "Load BHF yaw"
-    requires_steps: ["PD_BHF"]
-    configuration:
-      processing_key: "BHF"
-      databundle_output_key: "yaw"
-      signal_location: "background::/entry1/high_gain_front/yaw"
-      units_location: "background::/entry1/high_gain_front/yaw@units"
-      rank_of_data: 1
-  PD_BHF_energy:
-    module: AppendProcessingData
-    short_title: "Load BHF energy"
-    requires_steps: ["PD_BHF_yaw"]
-    configuration:
-      processing_key: "BHF"
-      databundle_output_key: "energy"
-      signal_location: "background::/entry1/high_gain_front/energy"
-      units_location: "background::/entry1/high_gain_front/energy@units"
-      rank_of_data: 0
-  MK_BHF:
-    module: ThresholdMask
-    short_title: "Dynamic range mask BHF"
-    requires_steps: ["PD_BHF_energy"]
-    configuration:
-      with_processing_keys: ["BHF"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      lower_bound: 0
-      mask_mode: "outside"
-      upper_bound: 1.2e-7
-  TI_BHF:
-    module: Divide
-    short_title: "Normalize BHF diode to exposure time"
-    requires_steps: ["MK_BHF"]
-    configuration:
-      with_processing_keys: ["BHF"]
-      divisor_source: "background::/entry1/high_gain_front/count_time"
-      divisor_units_source: "background::/entry1/high_gain_front/count_time@units"
-  PD_BHR:
-    module: AppendProcessingData
-    short_title: "Load BHR diode"
-    requires_steps: []
-    configuration:
-      processing_key: "BHR"
-      databundle_output_key: "signal"
-      signal_location: "background::/entry1/high_gain_rear/signal"
-      units_location: "background::/entry1/high_gain_rear/signal@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        subread_sem: "background::/entry1/high_gain_rear/subread_sem"
-        dark_offset_sem: "background::/entry1/high_gain_rear/dark_offset_sem"
-  PD_BHR_yaw:
-    module: AppendProcessingData
-    short_title: "Load BHR yaw"
-    requires_steps: ["PD_BHR"]
-    configuration:
-      processing_key: "BHR"
-      databundle_output_key: "yaw"
-      signal_location: "background::/entry1/high_gain_rear/yaw"
-      units_location: "background::/entry1/high_gain_rear/yaw@units"
-      rank_of_data: 1
-  PD_BHR_energy:
-    module: AppendProcessingData
-    short_title: "Load BHR energy"
-    requires_steps: ["PD_BHR_yaw"]
-    configuration:
-      processing_key: "BHR"
-      databundle_output_key: "energy"
-      signal_location: "background::/entry1/high_gain_rear/energy"
-      units_location: "background::/entry1/high_gain_rear/energy@units"
-      rank_of_data: 0
-  MK_BHR:
-    module: ThresholdMask
-    short_title: "Dynamic range mask BHR"
-    requires_steps: ["PD_BHR_energy"]
-    configuration:
-      with_processing_keys: ["BHR"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      lower_bound: 0
-      mask_mode: "outside"
-  TI_BHR:
-    module: Divide
-    short_title: "Normalize BHR diode to exposure time"
-    requires_steps: ["MK_BHR"]
-    configuration:
-      with_processing_keys: ["BHR"]
-      divisor_source: "background::/entry1/high_gain_rear/count_time"
-      divisor_units_source: "background::/entry1/high_gain_rear/count_time@units"
-  PD_SLI0:
-    module: AppendProcessingData
-    short_title: "Load SLI0"
-    requires_steps: []
-    configuration:
-      processing_key: "SLI0"
-      databundle_output_key: "signal"
-      signal_location: "sample::/entry1/low_gain_front/i0"
-      units_location: "sample::/entry1/low_gain_front/i0@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        i0_subread_sem: "sample::/entry1/low_gain_front/i0_subread_sem"
-  MK_SLI0:
-    module: ThresholdMask
-    short_title: "Mask non-positive SLI0"
-    requires_steps: ["PD_SLI0"]
-    configuration:
-      with_processing_keys: ["SLI0"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      upper_bound: 0
-      mask_mode: "inside"
-  AP_SLI0:
-    module: ApplyMask
-    short_title: "Apply SLI0 validity mask"
-    requires_steps: ["MK_SLI0"]
-    configuration:
-      with_processing_keys: ["SLI0"]
-      mask_key: "Mask"
-      basedata_to_mask: ["signal"]
-      masked_value: "nan"
-  TI_SLI0:
-    module: Divide
-    short_title: "Normalize SLI0 to exposure time"
-    requires_steps: ["AP_SLI0"]
-    configuration:
-      with_processing_keys: ["SLI0"]
-      divisor_source: "sample::/entry1/low_gain_front/i0_count_time"
-      divisor_units_source: "sample::/entry1/low_gain_front/i0_count_time@units"
-  PD_SHI0:
-    module: AppendProcessingData
-    short_title: "Load SHI0"
-    requires_steps: []
-    configuration:
-      processing_key: "SHI0"
-      databundle_output_key: "signal"
-      signal_location: "sample::/entry1/high_gain_front/i0"
-      units_location: "sample::/entry1/high_gain_front/i0@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        i0_subread_sem: "sample::/entry1/high_gain_front/i0_subread_sem"
-  MK_SHI0:
-    module: ThresholdMask
-    short_title: "Mask non-positive SHI0"
-    requires_steps: ["PD_SHI0"]
-    configuration:
-      with_processing_keys: ["SHI0"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      upper_bound: 0
-      mask_mode: "inside"
-  AP_SHI0:
-    module: ApplyMask
-    short_title: "Apply SHI0 validity mask"
-    requires_steps: ["MK_SHI0"]
-    configuration:
-      with_processing_keys: ["SHI0"]
-      mask_key: "Mask"
-      basedata_to_mask: ["signal"]
-      masked_value: "nan"
-  TI_SHI0:
-    module: Divide
-    short_title: "Normalize SHI0 to exposure time"
-    requires_steps: ["AP_SHI0"]
-    configuration:
-      with_processing_keys: ["SHI0"]
-      divisor_source: "sample::/entry1/high_gain_front/i0_count_time"
-      divisor_units_source: "sample::/entry1/high_gain_front/i0_count_time@units"
-  PD_BLI0:
-    module: AppendProcessingData
-    short_title: "Load BLI0"
-    requires_steps: []
-    configuration:
-      processing_key: "BLI0"
-      databundle_output_key: "signal"
-      signal_location: "background::/entry1/low_gain_front/i0"
-      units_location: "background::/entry1/low_gain_front/i0@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        i0_subread_sem: "background::/entry1/low_gain_front/i0_subread_sem"
-  MK_BLI0:
-    module: ThresholdMask
-    short_title: "Mask non-positive BLI0"
-    requires_steps: ["PD_BLI0"]
-    configuration:
-      with_processing_keys: ["BLI0"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      upper_bound: 0
-      mask_mode: "inside"
-  AP_BLI0:
-    module: ApplyMask
-    short_title: "Apply BLI0 validity mask"
-    requires_steps: ["MK_BLI0"]
-    configuration:
-      with_processing_keys: ["BLI0"]
-      mask_key: "Mask"
-      basedata_to_mask: ["signal"]
-      masked_value: "nan"
-  TI_BLI0:
-    module: Divide
-    short_title: "Normalize BLI0 to exposure time"
-    requires_steps: ["AP_BLI0"]
-    configuration:
-      with_processing_keys: ["BLI0"]
-      divisor_source: "background::/entry1/low_gain_front/i0_count_time"
-      divisor_units_source: "background::/entry1/low_gain_front/i0_count_time@units"
-  PD_BHI0:
-    module: AppendProcessingData
-    short_title: "Load BHI0"
-    requires_steps: []
-    configuration:
-      processing_key: "BHI0"
-      databundle_output_key: "signal"
-      signal_location: "background::/entry1/high_gain_front/i0"
-      units_location: "background::/entry1/high_gain_front/i0@units"
-      rank_of_data: 1
-      uncertainties_sources:
-        i0_subread_sem: "background::/entry1/high_gain_front/i0_subread_sem"
-  MK_BHI0:
-    module: ThresholdMask
-    short_title: "Mask non-positive BHI0"
-    requires_steps: ["PD_BHI0"]
-    configuration:
-      with_processing_keys: ["BHI0"]
-      source_basedata_key: "signal"
-      target_mask_key: "Mask"
-      upper_bound: 0
-      mask_mode: "inside"
-  AP_BHI0:
-    module: ApplyMask
-    short_title: "Apply BHI0 validity mask"
-    requires_steps: ["MK_BHI0"]
-    configuration:
-      with_processing_keys: ["BHI0"]
-      mask_key: "Mask"
-      basedata_to_mask: ["signal"]
-      masked_value: "nan"
-  TI_BHI0:
-    module: Divide
-    short_title: "Normalize BHI0 to exposure time"
-    requires_steps: ["AP_BHI0"]
-    configuration:
-      with_processing_keys: ["BHI0"]
-      divisor_source: "background::/entry1/high_gain_front/i0_count_time"
-      divisor_units_source: "background::/entry1/high_gain_front/i0_count_time@units"
-  FL_SLF:
-    module: DivideDatabundles
-    short_title: "Normalize SLF to I0 flux"
-    requires_steps: ["TI_SLF", "TI_SLI0"]
-    configuration:
-      with_processing_keys: ["SLF", "SLI0"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  FL_SLR:
-    module: DivideDatabundles
-    short_title: "Normalize SLR to I0 flux"
-    requires_steps: ["TI_SLR", "TI_SLI0"]
-    configuration:
-      with_processing_keys: ["SLR", "SLI0"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  FL_SHF:
-    module: DivideDatabundles
-    short_title: "Normalize SHF to I0 flux"
-    requires_steps: ["TI_SHF", "TI_SHI0"]
-    configuration:
-      with_processing_keys: ["SHF", "SHI0"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  FL_SHR:
-    module: DivideDatabundles
-    short_title: "Normalize SHR to I0 flux"
-    requires_steps: ["TI_SHR", "TI_SHI0"]
-    configuration:
-      with_processing_keys: ["SHR", "SHI0"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  FL_BLF:
-    module: DivideDatabundles
-    short_title: "Normalize BLF to I0 flux"
-    requires_steps: ["TI_BLF", "TI_BLI0"]
-    configuration:
-      with_processing_keys: ["BLF", "BLI0"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  FL_BLR:
-    module: DivideDatabundles
-    short_title: "Normalize BLR to I0 flux"
-    requires_steps: ["TI_BLR", "TI_BLI0"]
-    configuration:
-      with_processing_keys: ["BLR", "BLI0"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  FL_BHF:
-    module: DivideDatabundles
-    short_title: "Normalize BHF to I0 flux"
-    requires_steps: ["TI_BHF", "TI_BHI0"]
-    configuration:
-      with_processing_keys: ["BHF", "BHI0"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  FL_BHR:
-    module: DivideDatabundles
-    short_title: "Normalize BHR to I0 flux"
-    requires_steps: ["TI_BHR", "TI_BHI0"]
-    configuration:
-      with_processing_keys: ["BHR", "BHI0"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  CTR_SLR:
-    module: FindCenterOfMass1D
-    short_title: "Determine beam centre from SLR"
-    requires_steps: ["FL_SLR"]
-    configuration:
-      with_processing_keys: ["SLR"]
-      signal_key: "signal"
-      axis_key: "yaw"
-      mask_key: "Mask"
-      half_width: 25
-      width_units: "microradian"
-      baseline: 0
-      maximum_iterations: 5
-      convergence_tolerance: 0.001
-      output_key: "beam_center"
-      diagnostic_prefix: "centroid"
-  CTR_SHR:
-    module: FindCenterOfMass1D
-    short_title: "Determine beam centre from SHR"
-    requires_steps: ["FL_SHR"]
-    configuration:
-      with_processing_keys: ["SHR"]
-      signal_key: "signal"
-      axis_key: "yaw"
-      mask_key: "Mask"
-      half_width: 25
-      width_units: "microradian"
-      baseline: 0
-      maximum_iterations: 5
-      convergence_tolerance: 0.001
-      output_key: "beam_center"
-      diagnostic_prefix: "centroid"
-  CTR_BLR:
-    module: FindCenterOfMass1D
-    short_title: "Determine beam centre from BLR"
-    requires_steps: ["FL_BLR"]
-    configuration:
-      with_processing_keys: ["BLR"]
-      signal_key: "signal"
-      axis_key: "yaw"
-      mask_key: "Mask"
-      half_width: 25
-      width_units: "microradian"
-      baseline: 0
-      maximum_iterations: 5
-      convergence_tolerance: 0.001
-      output_key: "beam_center"
-      diagnostic_prefix: "centroid"
-  CTR_BHR:
-    module: FindCenterOfMass1D
-    short_title: "Determine beam centre from BHR"
-    requires_steps: ["FL_BHR"]
-    configuration:
-      with_processing_keys: ["BHR"]
-      signal_key: "signal"
-      axis_key: "yaw"
-      mask_key: "Mask"
-      half_width: 25
-      width_units: "microradian"
-      baseline: 0
-      maximum_iterations: 5
-      convergence_tolerance: 0.001
-      output_key: "beam_center"
-      diagnostic_prefix: "centroid"
-  CP_SLF_center:
-    module: CopyDataBundleKeys
-    short_title: "Copy SLR centre to SLF"
-    requires_steps: ["FL_SLF", "CTR_SLR"]
-    configuration:
-      with_processing_keys: ["SLF", "SLR"]
-      data_keys: ["beam_center"]
-      copy: true
-  CP_SHF_center:
-    module: CopyDataBundleKeys
-    short_title: "Copy SHR centre to SHF"
-    requires_steps: ["FL_SHF", "CTR_SHR"]
-    configuration:
-      with_processing_keys: ["SHF", "SHR"]
-      data_keys: ["beam_center"]
-      copy: true
-  CP_BLF_center:
-    module: CopyDataBundleKeys
-    short_title: "Copy BLR centre to BLF"
-    requires_steps: ["FL_BLF", "CTR_BLR"]
-    configuration:
-      with_processing_keys: ["BLF", "BLR"]
-      data_keys: ["beam_center"]
-      copy: true
-  CP_BHF_center:
-    module: CopyDataBundleKeys
-    short_title: "Copy BHR centre to BHF"
-    requires_steps: ["FL_BHF", "CTR_BHR"]
-    configuration:
-      with_processing_keys: ["BHF", "BHR"]
-      data_keys: ["beam_center"]
-      copy: true
-  Q_SLF:
-    module: YawToQ
-    short_title: "Convert SLF yaw to signed Q"
-    requires_steps: ["CP_SLF_center"]
-    configuration:
-      with_processing_keys: ["SLF"]
-      yaw_key: "yaw"
-      energy_key: "energy"
-      center_key: "beam_center"
-      output_key: "Q"
-      output_units: "1/nm"
-  Q_SLR:
-    module: YawToQ
-    short_title: "Convert SLR yaw to signed Q"
-    requires_steps: ["CTR_SLR"]
-    configuration:
-      with_processing_keys: ["SLR"]
-      yaw_key: "yaw"
-      energy_key: "energy"
-      center_key: "beam_center"
-      output_key: "Q"
-      output_units: "1/nm"
-  Q_SHF:
-    module: YawToQ
-    short_title: "Convert SHF yaw to signed Q"
-    requires_steps: ["CP_SHF_center"]
-    configuration:
-      with_processing_keys: ["SHF"]
-      yaw_key: "yaw"
-      energy_key: "energy"
-      center_key: "beam_center"
-      output_key: "Q"
-      output_units: "1/nm"
-  Q_SHR:
-    module: YawToQ
-    short_title: "Convert SHR yaw to signed Q"
-    requires_steps: ["CTR_SHR"]
-    configuration:
-      with_processing_keys: ["SHR"]
-      yaw_key: "yaw"
-      energy_key: "energy"
-      center_key: "beam_center"
-      output_key: "Q"
-      output_units: "1/nm"
-  Q_BLF:
-    module: YawToQ
-    short_title: "Convert BLF yaw to signed Q"
-    requires_steps: ["CP_BLF_center"]
-    configuration:
-      with_processing_keys: ["BLF"]
-      yaw_key: "yaw"
-      energy_key: "energy"
-      center_key: "beam_center"
-      output_key: "Q"
-      output_units: "1/nm"
-  Q_BLR:
-    module: YawToQ
-    short_title: "Convert BLR yaw to signed Q"
-    requires_steps: ["CTR_BLR"]
-    configuration:
-      with_processing_keys: ["BLR"]
-      yaw_key: "yaw"
-      energy_key: "energy"
-      center_key: "beam_center"
-      output_key: "Q"
-      output_units: "1/nm"
-  Q_BHF:
-    module: YawToQ
-    short_title: "Convert BHF yaw to signed Q"
-    requires_steps: ["CP_BHF_center"]
-    configuration:
-      with_processing_keys: ["BHF"]
-      yaw_key: "yaw"
-      energy_key: "energy"
-      center_key: "beam_center"
-      output_key: "Q"
-      output_units: "1/nm"
-  Q_BHR:
-    module: YawToQ
-    short_title: "Convert BHR yaw to signed Q"
-    requires_steps: ["CTR_BHR"]
-    configuration:
-      with_processing_keys: ["BHR"]
-      yaw_key: "yaw"
-      energy_key: "energy"
-      center_key: "beam_center"
-      output_key: "Q"
-      output_units: "1/nm"
-  IT_SAMPLE:
-    module: Integrate1D
-    short_title: "Integrate full sample low-gain front scan"
-    requires_steps: ["Q_SLF"]
-    configuration:
-      with_processing_keys: ["SLF"]
-      signal_key: "signal"
-      axis_key: "yaw"
-      mask_key: "Mask"
-      method: "trapezoid"
-      sort_axis: true
-      duplicate_axis: "mean"
-      output_processing_keys: ["sample_integral"]
-  IT_BACKGROUND:
-    module: Integrate1D
-    short_title: "Integrate full background low-gain front scan"
-    requires_steps: ["Q_BLF"]
-    configuration:
-      with_processing_keys: ["BLF"]
-      signal_key: "signal"
-      axis_key: "yaw"
-      mask_key: "Mask"
-      method: "trapezoid"
-      sort_axis: true
-      duplicate_axis: "mean"
-      output_processing_keys: ["background_integral"]
-  IT_SAMPLE_REAR:
-    module: Integrate1D
-    short_title: "Integrate full sample low-gain rear scan"
-    requires_steps: ["Q_SLR"]
-    configuration:
-      with_processing_keys: ["SLR"]
-      signal_key: "signal"
-      axis_key: "yaw"
-      mask_key: "Mask"
-      method: "trapezoid"
-      sort_axis: true
-      duplicate_axis: "mean"
-      output_processing_keys: ["sample_rear_integral"]
-  IT_BACKGROUND_REAR:
-    module: Integrate1D
-    short_title: "Integrate full background low-gain rear scan"
-    requires_steps: ["Q_BLR"]
-    configuration:
-      with_processing_keys: ["BLR"]
-      signal_key: "signal"
-      axis_key: "yaw"
-      mask_key: "Mask"
-      method: "trapezoid"
-      sort_axis: true
-      duplicate_axis: "mean"
-      output_processing_keys: ["background_rear_integral"]
-  TR:
-    module: DivideDatabundles
-    short_title: "Determine full-scan transmission"
-    requires_steps: ["IT_SAMPLE", "IT_BACKGROUND"]
-    configuration:
-      with_processing_keys: ["sample_integral", "background_integral"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  TR_REAR:
-    module: DivideDatabundles
-    short_title: "Determine rear-diode full-scan transmission diagnostic"
-    requires_steps: ["IT_SAMPLE_REAR", "IT_BACKGROUND_REAR"]
-    configuration:
-      with_processing_keys: ["sample_rear_integral", "background_rear_integral"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  TR_SLF:
-    module: DivideDatabundles
-    short_title: "Normalize SLF by transmission"
-    requires_steps: ["Q_SLF", "TR"]
-    configuration:
-      with_processing_keys: ["SLF", "sample_integral"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  TR_SLR:
-    module: DivideDatabundles
-    short_title: "Normalize SLR by transmission"
-    requires_steps: ["Q_SLR", "TR"]
-    configuration:
-      with_processing_keys: ["SLR", "sample_integral"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  TR_SHF:
-    module: DivideDatabundles
-    short_title: "Normalize SHF by transmission"
-    requires_steps: ["Q_SHF", "TR"]
-    configuration:
-      with_processing_keys: ["SHF", "sample_integral"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  TR_SHR:
-    module: DivideDatabundles
-    short_title: "Normalize SHR by transmission"
-    requires_steps: ["Q_SHR", "TR"]
-    configuration:
-      with_processing_keys: ["SHR", "sample_integral"]
-      dividend_data_key: "signal"
-      divisor_data_key: "signal"
-  BG_SLF:
-    module: SubtractInterpolated1D
-    short_title: "Subtract remapped BLF from SLF"
-    requires_steps: ["TR_SLF", "Q_BLF"]
-    configuration:
-      with_processing_keys: ["SLF", "BLF"]
-      signal_key: "signal"
-      axis_key: "Q"
-      mask_key: "Mask"
-      mode: "nearest"
-      output_signal_key: "signal"
-      output_mask_key: "remap_mask"
-  CP_WINGS_SLF:
-    module: CopyDataBundleKeys
-    short_title: "Preserve SLF signed-wing diagnostic"
-    requires_steps: ["BG_SLF"]
-    configuration:
-      with_processing_keys: ["SLF", "SLF"]
-      key_map:
-        signal: "both_wings_signal"
-        Q: "signed_Q"
-  WG_SLF:
-    module: ThresholdMask
-    short_title: "Select negative-Q wing for SLF"
-    requires_steps: ["CP_WINGS_SLF"]
-    configuration:
-      with_processing_keys: ["SLF"]
-      source_basedata_key: "Q"
-      target_mask_key: "wing_mask"
-      lower_bound: 0
-      mask_mode: "inside"
-  CM_SLF:
-    module: BitwiseOrMasks
-    short_title: "Combine SLF masks"
-    requires_steps: ["WG_SLF"]
-    configuration:
-      with_processing_keys: ["SLF"]
-      target_mask_key: "Mask"
-      source_mask_keys: ["remap_mask", "wing_mask"]
-  AP_SLF:
-    module: ApplyMask
-    short_title: "Apply SLF final mask"
-    requires_steps: ["CM_SLF"]
-    configuration:
-      with_processing_keys: ["SLF"]
-      mask_key: "Mask"
-      basedata_to_mask: ["signal"]
-      masked_value: "nan"
-  NQ_SLF:
-    module: Negate
-    short_title: "Convert SLF negative wing to positive Q"
-    requires_steps: ["AP_SLF"]
-    configuration:
-      with_processing_keys: ["SLF"]
-      data_key: "Q"
-  BG_SLR:
-    module: SubtractInterpolated1D
-    short_title: "Subtract remapped BLR from SLR"
-    requires_steps: ["TR_SLR", "Q_BLR"]
-    configuration:
-      with_processing_keys: ["SLR", "BLR"]
-      signal_key: "signal"
-      axis_key: "Q"
-      mask_key: "Mask"
-      mode: "nearest"
-      output_signal_key: "signal"
-      output_mask_key: "remap_mask"
-  CP_WINGS_SLR:
-    module: CopyDataBundleKeys
-    short_title: "Preserve SLR signed-wing diagnostic"
-    requires_steps: ["BG_SLR"]
-    configuration:
-      with_processing_keys: ["SLR", "SLR"]
-      key_map:
-        signal: "both_wings_signal"
-        Q: "signed_Q"
-  WG_SLR:
-    module: ThresholdMask
-    short_title: "Select negative-Q wing for SLR"
-    requires_steps: ["CP_WINGS_SLR"]
-    configuration:
-      with_processing_keys: ["SLR"]
-      source_basedata_key: "Q"
-      target_mask_key: "wing_mask"
-      lower_bound: 0
-      mask_mode: "inside"
-  CM_SLR:
-    module: BitwiseOrMasks
-    short_title: "Combine SLR masks"
-    requires_steps: ["WG_SLR"]
-    configuration:
-      with_processing_keys: ["SLR"]
-      target_mask_key: "Mask"
-      source_mask_keys: ["remap_mask", "wing_mask"]
-  AP_SLR:
-    module: ApplyMask
-    short_title: "Apply SLR final mask"
-    requires_steps: ["CM_SLR"]
-    configuration:
-      with_processing_keys: ["SLR"]
-      mask_key: "Mask"
-      basedata_to_mask: ["signal"]
-      masked_value: "nan"
-  NQ_SLR:
-    module: Negate
-    short_title: "Convert SLR negative wing to positive Q"
-    requires_steps: ["AP_SLR"]
-    configuration:
-      with_processing_keys: ["SLR"]
-      data_key: "Q"
-  BG_SHF:
-    module: SubtractInterpolated1D
-    short_title: "Subtract remapped BHF from SHF"
-    requires_steps: ["TR_SHF", "Q_BHF"]
-    configuration:
-      with_processing_keys: ["SHF", "BHF"]
-      signal_key: "signal"
-      axis_key: "Q"
-      mask_key: "Mask"
-      mode: "nearest"
-      output_signal_key: "signal"
-      output_mask_key: "remap_mask"
-  CP_WINGS_SHF:
-    module: CopyDataBundleKeys
-    short_title: "Preserve SHF signed-wing diagnostic"
-    requires_steps: ["BG_SHF"]
-    configuration:
-      with_processing_keys: ["SHF", "SHF"]
-      key_map:
-        signal: "both_wings_signal"
-        Q: "signed_Q"
-  WG_SHF:
-    module: ThresholdMask
-    short_title: "Select negative-Q wing for SHF"
-    requires_steps: ["CP_WINGS_SHF"]
-    configuration:
-      with_processing_keys: ["SHF"]
-      source_basedata_key: "Q"
-      target_mask_key: "wing_mask"
-      lower_bound: 0
-      mask_mode: "inside"
-  CM_SHF:
-    module: BitwiseOrMasks
-    short_title: "Combine SHF masks"
-    requires_steps: ["WG_SHF"]
-    configuration:
-      with_processing_keys: ["SHF"]
-      target_mask_key: "Mask"
-      source_mask_keys: ["remap_mask", "wing_mask"]
-  AP_SHF:
-    module: ApplyMask
-    short_title: "Apply SHF final mask"
-    requires_steps: ["CM_SHF"]
-    configuration:
-      with_processing_keys: ["SHF"]
-      mask_key: "Mask"
-      basedata_to_mask: ["signal"]
-      masked_value: "nan"
-  NQ_SHF:
-    module: Negate
-    short_title: "Convert SHF negative wing to positive Q"
-    requires_steps: ["AP_SHF"]
-    configuration:
-      with_processing_keys: ["SHF"]
-      data_key: "Q"
-  BG_SHR:
-    module: SubtractInterpolated1D
-    short_title: "Subtract remapped BHR from SHR"
-    requires_steps: ["TR_SHR", "Q_BHR"]
-    configuration:
-      with_processing_keys: ["SHR", "BHR"]
-      signal_key: "signal"
-      axis_key: "Q"
-      mask_key: "Mask"
-      mode: "nearest"
-      output_signal_key: "signal"
-      output_mask_key: "remap_mask"
-  CP_WINGS_SHR:
-    module: CopyDataBundleKeys
-    short_title: "Preserve SHR signed-wing diagnostic"
-    requires_steps: ["BG_SHR"]
-    configuration:
-      with_processing_keys: ["SHR", "SHR"]
-      key_map:
-        signal: "both_wings_signal"
-        Q: "signed_Q"
-  WG_SHR:
-    module: ThresholdMask
-    short_title: "Select negative-Q wing for SHR"
-    requires_steps: ["CP_WINGS_SHR"]
-    configuration:
-      with_processing_keys: ["SHR"]
-      source_basedata_key: "Q"
-      target_mask_key: "wing_mask"
-      lower_bound: 0
-      mask_mode: "inside"
-  CM_SHR:
-    module: BitwiseOrMasks
-    short_title: "Combine SHR masks"
-    requires_steps: ["WG_SHR"]
-    configuration:
-      with_processing_keys: ["SHR"]
-      target_mask_key: "Mask"
-      source_mask_keys: ["remap_mask", "wing_mask"]
-  AP_SHR:
-    module: ApplyMask
-    short_title: "Apply SHR final mask"
-    requires_steps: ["CM_SHR"]
-    configuration:
-      with_processing_keys: ["SHR"]
-      mask_key: "Mask"
-      basedata_to_mask: ["signal"]
-      masked_value: "nan"
-  NQ_SHR:
-    module: Negate
-    short_title: "Convert SHR negative wing to positive Q"
-    requires_steps: ["AP_SHR"]
-    configuration:
-      with_processing_keys: ["SHR"]
-      data_key: "Q"
-  SF_SLR:
-    module: FindScaleFactor1D
-    short_title: "Fit SLR scale to SLF"
-    requires_steps: ["NQ_SLR", "NQ_SLF"]
-    configuration:
-      with_processing_keys: ["SLR", "SLF"]
-      signal_key: "signal"
-      independent_axis_key: "Q"
-      fit_model: "lognormal"
-      uncertainty_weight_key: "subread_sem"
-      fit_background: false
-      fit_min_val: 0.0008
-      fit_max_val: 0.03
-      fit_val_units: "1/nm"
-      require_overlap: true
-      interpolation_kind: "linear"
-      use_basedata_weights: true
-      scale_output_key: "scale_factor"
-  SC_SLR:
-    module: MultiplyDatabundles
-    short_title: "Apply SLR scale"
-    requires_steps: ["SF_SLR"]
-    configuration:
-      with_processing_keys: ["SLR", "SLR"]
-      multiplicand_data_key: "signal"
-      multiplier_data_key: "scale_factor"
-  SF_SHF:
-    module: FindScaleFactor1D
-    short_title: "Fit SHF scale to SLF"
-    requires_steps: ["NQ_SHF", "NQ_SLF"]
-    configuration:
-      with_processing_keys: ["SHF", "SLF"]
-      signal_key: "signal"
-      independent_axis_key: "Q"
-      fit_model: "lognormal"
-      uncertainty_weight_key: "subread_sem"
-      fit_background: false
-      fit_min_val: 0.0008
-      fit_max_val: 0.03
-      fit_val_units: "1/nm"
-      require_overlap: true
-      interpolation_kind: "linear"
-      use_basedata_weights: true
-      scale_output_key: "scale_factor"
-  SC_SHF:
-    module: MultiplyDatabundles
-    short_title: "Apply SHF scale"
-    requires_steps: ["SF_SHF"]
-    configuration:
-      with_processing_keys: ["SHF", "SHF"]
-      multiplicand_data_key: "signal"
-      multiplier_data_key: "scale_factor"
-  SF_SHR:
-    module: FindScaleFactor1D
-    short_title: "Fit SHR scale to SLF"
-    requires_steps: ["NQ_SHR", "NQ_SLF"]
-    configuration:
-      with_processing_keys: ["SHR", "SLF"]
-      signal_key: "signal"
-      independent_axis_key: "Q"
-      fit_model: "lognormal"
-      uncertainty_weight_key: "subread_sem"
-      fit_background: false
-      fit_min_val: 0.0008
-      fit_max_val: 0.03
-      fit_val_units: "1/nm"
-      require_overlap: true
-      interpolation_kind: "linear"
-      use_basedata_weights: true
-      scale_output_key: "scale_factor"
-  SC_SHR:
-    module: MultiplyDatabundles
-    short_title: "Apply SHR scale"
-    requires_steps: ["SF_SHR"]
-    configuration:
-      with_processing_keys: ["SHR", "SHR"]
-      multiplicand_data_key: "signal"
-      multiplier_data_key: "scale_factor"
   POOL:
     module: ConcatenateDatabundles
-    short_title: "Pool scaled diode readouts"
-    requires_steps: ["NQ_SLF", "SC_SLR", "SC_SHF", "SC_SHR"]
+    short_title: Pool scaled diode readouts
+    requires_steps:
+      - prepare_final_wing.SLF.positive_q
+      - scale_readout.SLR.apply
+      - scale_readout.SHF.apply
+      - scale_readout.SHR.apply
     configuration:
-      with_processing_keys: ["SLF", "SLR", "SHF", "SHR"]
-      data_keys: ["signal", "Q", "Mask"]
-      output_processing_key: "pooled"
+      with_processing_keys: [SLF, SLR, SHF, SHR]
+      data_keys: [signal, Q, Mask]
+      output_processing_key: pooled
       sort_by: null
       descending: false
-      source_index_key: "source_index"
+      source_index_key: source_index
   IP:
     module: IndexPixels
-    short_title: "Index pooled USAXS points"
-    requires_steps: ["POOL"]
+    short_title: Index pooled USAXS points
+    requires_steps: [POOL]
     configuration:
-      with_processing_keys: ["pooled"]
-      averaging_direction: "azimuthal"
+      with_processing_keys: [pooled]
+      averaging_direction: azimuthal
       q_min: 0.0008
       q_max: 0.04
-      q_limits_unit: "1/nm"
+      q_limits_unit: 1/nm
       n_bins: 400
-      bin_type: "log"
+      bin_type: log
   AV:
     module: IndexedAverager
-    short_title: "Average pooled USAXS points at actual mean Q"
-    requires_steps: ["IP"]
+    short_title: Average pooled USAXS points at actual mean Q
+    requires_steps: [IP]
     configuration:
-      with_processing_keys: ["pooled"]
-      averaging_direction: "azimuthal"
+      with_processing_keys: [pooled]
+      averaging_direction: azimuthal
       use_signal_weights: true
       use_signal_uncertainty_weights: true
-      uncertainty_weight_key: "subread_sem"
-      stats_keys: ["signal", "Q"]
+      uncertainty_weight_key: subread_sem
+      stats_keys: [signal, Q]
