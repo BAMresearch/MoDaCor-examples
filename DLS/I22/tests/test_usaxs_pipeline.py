@@ -39,3 +39,16 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
     }
     assert "step_blocks" in pipeline.authored_spec
     assert "step_blocks" not in yaml.safe_load(pipeline.to_yaml())
+
+
+def test_usaxs_pipeline_graphs_group_each_authored_step_block() -> None:
+    pipeline = Pipeline.from_yaml_file(PIPELINE_PATH)
+
+    dot_source = pipeline.to_dot()
+    mermaid_source = pipeline.to_mermaid(direction="TD")
+    for block_id in pipeline.authored_spec["step_blocks"]:
+        assert f'label="{block_id} (for_each)"' in dot_source
+        assert f'["{block_id} (for_each)"]' in mermaid_source
+
+    assert "subgraph" not in pipeline.to_dot(group_step_blocks=False)
+    assert "subgraph" not in pipeline.to_mermaid(group_step_blocks=False)
