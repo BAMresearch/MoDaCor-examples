@@ -25,7 +25,7 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
         "Divide": 12,
         "ApplyMask": 8,
         "CopyDataBundleKeys": 8,
-        "YawToQ": 8,
+        "AngleToQ": 8,
         "FindCenterOfMass1D": 4,
         "Integrate1D": 4,
         "SubtractInterpolated1D": 4,
@@ -39,6 +39,14 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
     }
     assert "step_blocks" in pipeline.authored_spec
     assert "step_blocks" not in yaml.safe_load(pipeline.to_yaml())
+
+    node_configs = {node["id"]: node["config"] for node in spec["nodes"]}
+    assert node_configs["IP"]["q_min"] == 0.002
+    assert {
+        node_configs["scale_readout.SLR.fit"]["fit_min_val"],
+        node_configs["scale_readout.SHF.fit"]["fit_min_val"],
+        node_configs["scale_readout.SHR.fit"]["fit_min_val"],
+    } == {0.002}
 
 
 def test_usaxs_pipeline_graphs_group_each_authored_step_block() -> None:

@@ -1,7 +1,7 @@
 # I22 USAXS processing design
 
 Status: initial implementation validated 2026-09-29; revision backlog agreed
-2026-09-30; priority-1 schema expansion implemented and validated
+2026-09-30; priorities 0--2 implemented and validated
 
 ## Purpose
 
@@ -34,7 +34,7 @@ implementation where they differ.
 | ---: | --- | --- | --- | --- | --- |
 | 0 | 1, 4, 6 | Correct terminology, set the agreed final `q_min`, and define how negative results are assessed | Very low | Immediate clarity and a safer example default | None |
 | 1 | 7, 9 | Add schema-level `for_each` step-block expansion, including loading blocks | Medium | Very high reduction in authored YAML without weakening module contracts | None |
-| 2 | 2 | Generalize `YawToQ` into an angle-convention-aware `AngleToQ` | Low--medium | Reusable for USAXS and step-scanning diffractometers | Explicit angle convention |
+| 2 | 2 | Generalize angle-to-Q conversion with explicit conventions and uncertainty-aware energy/wavelength input | Low--medium | Reusable for USAXS and step-scanning diffractometers | Explicit angle convention |
 | 3 | 3 | Add a general BaseData-coordinate indexer and retain `IndexPixels` as a scattering convenience interface | Medium--high | Reusable binning outside detector images and Q/Psi conventions | Generic bin/ROI/periodicity schema |
 | 4 | 8 | Determine one beam centre per physical front/rear scan pair | Medium | Correct physical grouping and cleaner graph lanes | Paired-profile combination rule |
 | 5 | 5, 10 | Scale and merge all four series, determine and retain transmission, then subtract the merged background | High | Largest scientific improvement to the current correction chain | Common scale anchor, paired centres, merged-coordinate reduction |
@@ -43,13 +43,13 @@ implementation where they differ.
 Priority 1 is now implemented: schema-level `for_each` step-block expansion.
 The detailed design and implementation record is in the MoDaCor core note
 [`pipeline-foreach-expansion.md`](https://github.com/BAMResearch/MoDaCor/blob/main/docs/development/design/pipeline-foreach-expansion.md).
-The compact pipeline is 496 rather than 1,255 lines and expands to the same
+The compact pipeline is 498 rather than 1,255 lines and expands to the same
 123 ordinary steps. It reproduces the prior pooled signal, pooled Q, and
 transmission scalar exactly for sample scans 978497--978500 against background
-scans 977724--977727. The priority-0 decisions are recorded here; the `q_min`
-configuration change should be made alongside the next scientific pipeline
-revision so that the tracked pipeline and its validation results change
-together.
+scans 977724--977727. The subsequent `AngleToQ` migration reproduced those
+values within floating-point roundoff before the independently agreed Q-range
+change. The pipeline now uses `q_min = 2e-3 1/nm` for final binning and the
+matching final-curve scaling interval.
 
 ### 1. Eight diode readouts, not twelve scientific inputs
 
@@ -67,8 +67,8 @@ presenting it as four additional measurement lanes.
 
 ### 2. General angle-to-Q conversion
 
-The public conversion step should become `AngleToQ`. Renaming alone is not
-sufficient because the configured angle must have an explicit convention:
+The public conversion step is `AngleToQ`, with an explicit configured
+convention:
 
 - `scattering_angle` or `two_theta` uses
   `Q = 4*pi/lambda * sin(angle/2)`;
@@ -77,9 +77,11 @@ sufficient because the configured angle must have an explicit convention:
 
 The step retains an optional zero/centre, measured photon energy or wavelength,
 signed output, units, axes, and BaseData uncertainty propagation. The current
-USAXS yaw is treated as a signed scattering-angle displacement. The numerical
-kernel is already phrased in terms of scattering angle; the main work is the
-public configuration contract, migration compatibility, tests, and docs.
+USAXS yaw is treated as a signed scattering-angle displacement. No `YawToQ`
+compatibility alias is retained because the earlier step had no external
+consumer. Reusable `BaseData` helpers convert photon energy and wavelength in
+both directions through `h*c`, preserving units, named uncertainty components,
+axes, rank, and weights. The material-attenuation path uses the same helper.
 
 ### 3. General BaseData indexing
 
@@ -108,6 +110,10 @@ The agreed lower limit for the final I22 USAXS example is
 final binning and any final-curve scaling interval whose lower boundary is
 intended to match the usable Q range. Full signed scans remain available for
 centering, scaling studies, transmission, and wing diagnostics.
+
+All three example acquisitions execute the 123-step pipeline with this limit.
+Their final curves contain 386 points, with the first mean bin Q at about
+`2.008e-3 1/nm`; the transmission factors remain approximately 0.5902--0.5910.
 
 ### 5. Transmission from the merged four-series measurement
 
@@ -309,7 +315,9 @@ physical scan. Low- and high-gain scans are centred independently.
 
 ## Signed momentum transfer and wing policy in the initial implementation
 
-The yaw-to-Q module uses measured photon energy and
+The `AngleToQ` module treats analyser yaw as a signed scattering angle, uses
+the measured photon energy through the shared uncertainty-aware
+energy-to-wavelength helper, and evaluates
 
 ```text
 Q = 4*pi/wavelength * sin((yaw - yaw_zero)/2)
@@ -399,7 +407,7 @@ reduce subreads and subtract exposure-adjusted diode darks
   -> build finite/I0/saturation/SNR masks
   -> normalize to count time and I0
   -> determine four rear-diode centroids
-  -> convert yaw to signed Q for all eight readouts
+  -> convert yaw as a scattering angle to signed Q for all eight readouts
   -> integrate full scans and determine transmission
   -> divide sample readouts by transmission
   -> nearest or linear remapped background subtraction per readout

@@ -303,12 +303,14 @@ step_blocks:
       BHR: {processing_key: BHR, requires: [find_center.BHR.center]}
     steps:
       q:
-        module: YawToQ
+        module: AngleToQ
         requires_steps: "${requires}"
         configuration:
           with_processing_keys: ["${processing_key}"]
-          yaw_key: yaw
-          energy_key: energy
+          angle_key: yaw
+          incident_key: energy
+          incident_quantity: energy
+          angle_convention: scattering_angle
           center_key: beam_center
           output_key: Q
           output_units: 1/nm
@@ -440,7 +442,7 @@ step_blocks:
           fit_model: lognormal
           uncertainty_weight_key: subread_sem
           fit_background: false
-          fit_min_val: 0.0008
+          fit_min_val: 0.002
           fit_max_val: 0.03
           fit_val_units: 1/nm
           require_overlap: true
@@ -478,7 +480,7 @@ steps:
     configuration:
       with_processing_keys: [pooled]
       averaging_direction: azimuthal
-      q_min: 0.0008
+      q_min: 0.002
       q_max: 0.04
       q_limits_unit: 1/nm
       n_bins: 400
