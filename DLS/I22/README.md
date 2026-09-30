@@ -36,6 +36,10 @@ contributors must obtain the development payload directly from the maintainers.
 Start Jupyter from the repository root or this directory, select the prepared
 MoDaCor kernel, and choose one focused notebook:
 
+- `I22_USAXS_server.ipynb` preprocesses the four-scan USAXS acquisitions and
+  runs the signed-Q correction, transmission, background-remapping, diode
+  scaling, and indexed averaging pipeline. See `USAXS_PROCESSING_DESIGN.md`
+  for the processing contract and provisional settings.
 - `I22_solids_server.ipynb` performs ordinary non-chunked batch processing.
 - `I22_solids_chunked_buffer.ipynb` uploads notebook-sliced `BufferSource`
   chunks.
