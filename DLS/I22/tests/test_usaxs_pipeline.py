@@ -16,26 +16,26 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
     pipeline = Pipeline.from_yaml_file(PIPELINE_PATH)
     spec = pipeline.to_spec()
 
-    assert len(spec["nodes"]) == 123
-    assert sum("origin" in node for node in spec["nodes"]) == 120
+    assert len(spec["nodes"]) == 155
+    assert sum("origin" in node for node in spec["nodes"]) == 152
     assert Counter(node["module"] for node in spec["nodes"]) == {
         "AppendProcessingData": 28,
         "ThresholdMask": 16,
+        "ApplyMask": 16,
+        "CopyDataBundleKeys": 16,
         "DivideDatabundles": 14,
         "Divide": 12,
-        "ApplyMask": 8,
-        "CopyDataBundleKeys": 8,
         "AngleToQ": 8,
+        "FindScaleFactor1D": 7,
+        "MultiplyDatabundles": 7,
+        "ConcatenateDatabundles": 5,
+        "IndexedAverager": 5,
         "FindCenterOfMass1D": 4,
         "Integrate1D": 4,
         "SubtractInterpolated1D": 4,
         "BitwiseOrMasks": 4,
         "Negate": 4,
-        "FindScaleFactor1D": 3,
-        "MultiplyDatabundles": 3,
-        "ConcatenateDatabundles": 1,
         "IndexByCoordinate": 1,
-        "IndexedAverager": 1,
     }
     assert "step_blocks" in pipeline.authored_spec
     assert "step_blocks" not in yaml.safe_load(pipeline.to_yaml())
@@ -47,6 +47,13 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
         node_configs["scale_readout.SHF.fit"]["fit_min_val"],
         node_configs["scale_readout.SHR.fit"]["fit_min_val"],
     } == {0.002}
+    for pair in ("SL", "SH", "BL", "BH"):
+        pool_config = node_configs[f"prepare_pair_center.{pair}.pool"]
+        average_config = node_configs[f"prepare_pair_center.{pair}.average"]
+        assert pool_config["source_position_key"] == "pair_index"
+        assert pool_config["alignment_key"] == "yaw"
+        assert average_config["index_key"] == "pair_index"
+        assert average_config["uncertainty_weight_key"] == "subread_sem"
 
 
 def test_usaxs_pipeline_graphs_group_each_authored_step_block() -> None:

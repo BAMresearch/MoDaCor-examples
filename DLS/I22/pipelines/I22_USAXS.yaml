@@ -160,9 +160,17 @@ step_blocks:
           lower_bound: 0
           upper_bound: "${upper_bound}"
           mask_mode: outside
+      apply_mask:
+        module: ApplyMask
+        requires_steps: [.dynamic_mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          mask_key: Mask
+          basedata_to_mask: [signal]
+          masked_value: nan
       normalize_time:
         module: Divide
-        requires_steps: [.dynamic_mask]
+        requires_steps: [.apply_mask]
         configuration:
           with_processing_keys: ["${processing_key}"]
           divisor_source: "${count_time_location}"
@@ -253,21 +261,99 @@ step_blocks:
           dividend_data_key: signal
           divisor_data_key: signal
 
-  find_center:
+  prepare_pair_center:
     for_each:
-      SLR: {processing_key: SLR, requires: [normalize_flux.SLR.divide]}
-      SHR: {processing_key: SHR, requires: [normalize_flux.SHR.divide]}
-      BLR: {processing_key: BLR, requires: [normalize_flux.BLR.divide]}
-      BHR: {processing_key: BHR, requires: [normalize_flux.BHR.divide]}
+      SL:
+        front: SLF
+        rear: SLR
+        rear_work: SL_center_rear
+        pooled: SL_center_pool
+        merged: SL_center
+        requires: [normalize_flux.SLF.divide, normalize_flux.SLR.divide]
+      SH:
+        front: SHF
+        rear: SHR
+        rear_work: SH_center_rear
+        pooled: SH_center_pool
+        merged: SH_center
+        requires: [normalize_flux.SHF.divide, normalize_flux.SHR.divide]
+      BL:
+        front: BLF
+        rear: BLR
+        rear_work: BL_center_rear
+        pooled: BL_center_pool
+        merged: BL_center
+        requires: [normalize_flux.BLF.divide, normalize_flux.BLR.divide]
+      BH:
+        front: BHF
+        rear: BHR
+        rear_work: BH_center_rear
+        pooled: BH_center_pool
+        merged: BH_center
+        requires: [normalize_flux.BHF.divide, normalize_flux.BHR.divide]
     steps:
-      center:
-        module: FindCenterOfMass1D
+      copy_rear:
+        module: CopyDataBundleKeys
         requires_steps: "${requires}"
         configuration:
-          with_processing_keys: ["${processing_key}"]
+          with_processing_keys: ["${rear_work}", "${rear}"]
+          data_keys: [signal, yaw]
+          copy: true
+      fit_rear_to_front:
+        module: FindScaleFactor1D
+        requires_steps: [.copy_rear]
+        configuration:
+          with_processing_keys: ["${rear_work}", "${front}"]
+          signal_key: signal
+          independent_axis_key: yaw
+          fit_model: lognormal
+          uncertainty_weight_key: subread_sem
+          fit_background: false
+          require_overlap: true
+          interpolation_kind: linear
+          use_basedata_weights: true
+          scale_output_key: pair_scale_factor
+      scale_rear:
+        module: MultiplyDatabundles
+        requires_steps: [.fit_rear_to_front]
+        configuration:
+          with_processing_keys: ["${rear_work}", "${rear_work}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: pair_scale_factor
+      pool:
+        module: ConcatenateDatabundles
+        requires_steps: [.scale_rear]
+        configuration:
+          with_processing_keys: ["${front}", "${rear_work}"]
+          data_keys: [signal, yaw]
+          output_processing_key: "${pooled}"
+          sort_by: null
+          source_index_key: diode_index
+          source_position_key: pair_index
+          alignment_key: yaw
+      average:
+        module: IndexedAverager
+        requires_steps: [.pool]
+        configuration:
+          with_processing_keys: ["${pooled}"]
+          output_processing_key: "${merged}"
+          value_key: signal
+          index_key: pair_index
+          axis_key: yaw
+          mask_key: null
+          bin_id_key: point_index
+          use_value_weights: true
+          use_value_uncertainty_weights: true
+          uncertainty_weight_key: subread_sem
+          stats_keys: [signal, yaw]
+      center:
+        module: FindCenterOfMass1D
+        requires_steps: [.average]
+        configuration:
+          with_processing_keys: ["${merged}"]
           signal_key: signal
           axis_key: yaw
-          mask_key: Mask
+          mask_key: null
           half_width: 25
           width_units: microradian
           baseline: 0
@@ -278,29 +364,33 @@ step_blocks:
 
   copy_center:
     for_each:
-      SLF: {front: SLF, rear: SLR, requires: [normalize_flux.SLF.divide, find_center.SLR.center]}
-      SHF: {front: SHF, rear: SHR, requires: [normalize_flux.SHF.divide, find_center.SHR.center]}
-      BLF: {front: BLF, rear: BLR, requires: [normalize_flux.BLF.divide, find_center.BLR.center]}
-      BHF: {front: BHF, rear: BHR, requires: [normalize_flux.BHF.divide, find_center.BHR.center]}
+      SLF: {target: SLF, source: SL_center, requires: [prepare_pair_center.SL.center]}
+      SLR: {target: SLR, source: SL_center, requires: [prepare_pair_center.SL.center]}
+      SHF: {target: SHF, source: SH_center, requires: [prepare_pair_center.SH.center]}
+      SHR: {target: SHR, source: SH_center, requires: [prepare_pair_center.SH.center]}
+      BLF: {target: BLF, source: BL_center, requires: [prepare_pair_center.BL.center]}
+      BLR: {target: BLR, source: BL_center, requires: [prepare_pair_center.BL.center]}
+      BHF: {target: BHF, source: BH_center, requires: [prepare_pair_center.BH.center]}
+      BHR: {target: BHR, source: BH_center, requires: [prepare_pair_center.BH.center]}
     steps:
       copy:
         module: CopyDataBundleKeys
         requires_steps: "${requires}"
         configuration:
-          with_processing_keys: ["${front}", "${rear}"]
+          with_processing_keys: ["${target}", "${source}"]
           data_keys: [beam_center]
           copy: true
 
   convert_q:
     for_each:
       SLF: {processing_key: SLF, requires: [copy_center.SLF.copy]}
-      SLR: {processing_key: SLR, requires: [find_center.SLR.center]}
+      SLR: {processing_key: SLR, requires: [copy_center.SLR.copy]}
       SHF: {processing_key: SHF, requires: [copy_center.SHF.copy]}
-      SHR: {processing_key: SHR, requires: [find_center.SHR.center]}
+      SHR: {processing_key: SHR, requires: [copy_center.SHR.copy]}
       BLF: {processing_key: BLF, requires: [copy_center.BLF.copy]}
-      BLR: {processing_key: BLR, requires: [find_center.BLR.center]}
+      BLR: {processing_key: BLR, requires: [copy_center.BLR.copy]}
       BHF: {processing_key: BHF, requires: [copy_center.BHF.copy]}
-      BHR: {processing_key: BHR, requires: [find_center.BHR.center]}
+      BHR: {processing_key: BHR, requires: [copy_center.BHR.copy]}
     steps:
       q:
         module: AngleToQ

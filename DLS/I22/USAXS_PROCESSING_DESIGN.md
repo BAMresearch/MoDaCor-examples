@@ -59,6 +59,19 @@ sample acquisitions still produce 386 populated bins (IDs 0--385). Their final
 Q and intensity arrays are exactly equal to the preceding implementation, and
 their transmission factors remain unchanged.
 
+Priority 4 is now implemented as a centre-estimation branch. Each simultaneous
+front/rear pair is response-scaled, concatenated, and reduced by its original
+point position before one centroid is calculated and copied to both original
+readouts. The branch operates on copies, so its provisional scale factor does
+not modify the diode data used by the later correction chain. The expanded DAG
+now has 155 ordinary steps; the authored `prepare_pair_center` block keeps the
+four identical physical-scan lanes collapsed and readable.
+
+Across the three example samples, the merged-pair centres differ by less than
+0.17 microradian from the previous rear-only fallback. All runs still produce
+386 populated final bins, and their established front-diode transmission
+values remain `0.590794146`, `0.590196960`, and `0.590990570` respectively.
+
 ### 1. Eight diode readouts, not twelve scientific inputs
 
 There are four dark-corrected diode readouts for the sample and four for the
@@ -145,7 +158,7 @@ final binning and any final-curve scaling interval whose lower boundary is
 intended to match the usable Q range. Full signed scans remain available for
 centering, scaling studies, transmission, and wing diagnostics.
 
-All three example acquisitions execute the 123-step pipeline with this limit.
+All three example acquisitions execute the current 155-step pipeline with this limit.
 Their final curves contain 386 points, with the first mean bin Q at about
 `2.008e-3 1/nm`; the transmission factors remain approximately 0.5902--0.5910.
 
@@ -177,6 +190,17 @@ This revision moves diode/gain response scaling before transmission and
 background subtraction. It consequently requires a reviewed rule for deriving
 response factors without relying on the already background-subtracted curve.
 
+The paired-centre implementation supplied a useful real-data warning for this
+later work. Full-scan low-gain front/rear factors are stable between sample and
+background (about 29.7 and 29.8), but the corresponding independently fitted
+high-gain factors are not (about 3.2 and 0.49 for the first sample/background
+pair). Using all of those independent factors in an early four-series merge
+changed the first transmission estimate from about 0.591 to 0.333. Therefore
+the centre-estimation merge is deliberately isolated for now. A merged
+transmission must use shared response calibration, or an explicitly reviewed
+joint/iterative estimator, rather than independently rescaling sample and
+background.
+
 ### 6. Negative background-subtracted intensities
 
 Negative intensities are retained. They are acceptable when their distribution
@@ -191,7 +215,7 @@ are not a correction failure.
 
 Modules should keep their current specific task rather than acquiring lists of
 unrelated targets or pairs. Repetition belongs at the pipeline-composition
-layer. Investigation of the runtime and the 123-step USAXS graph showed that a
+layer. Investigation of the runtime and the then-current 123-step USAXS graph showed that a
 single-step map is too narrow: it reduces repeated module declarations but does
 not represent repeated chains such as “for sample and background, do x, y, and
 z.” The preferred feature is therefore schema-level `for_each` expansion of a
@@ -243,17 +267,33 @@ There are four physical front/rear pairs:
 - background low gain: `BLF + BLR`;
 - background high gain: `BHF + BHR`.
 
-Each pair must yield one shared beam centre used by both readouts. Low/high and
+Each pair yields one shared beam centre used by both readouts. Low/high and
 sample/background profiles must not be combined merely because they use the
-same centering module. A repeated step block can invoke the selected paired
-estimator four times, but the estimator's scientific combination rule belongs
-to the module, not to pipeline expansion.
+same centering module. The `prepare_pair_center` repeated block invokes the
+same explicit chain four times:
 
-When this item is implemented, the paired estimator must specify whether it
-centres a response-scaled combined profile or combines two independently
-estimated centres. Saturation masks and uncertainties must participate in that
-choice. The current rear-derived centre copied to the front diode remains the
-fallback until the paired rule is selected.
+1. copy the rear signal so centre preparation cannot mutate a scientific
+   readout;
+2. fit that copy to the front response in yaw space with the configured
+   `subread_sem` weighting;
+3. apply the fitted scalar only to the copy;
+4. concatenate the front and scaled-rear profiles while recording both diode
+   identity and source-local point position;
+5. use the source-local position directly as the `IndexedAverager` group map,
+   averaging the actual yaw and signal with the selected uncertainty weights;
+6. determine the iterative centroid of that merged profile; and
+7. copy the shared centre to both original readouts before `AngleToQ`.
+
+Front and rear yaw arrays are identical within each physical scan. The
+source-position index is therefore an exact aligned-observation grouping, not
+a coordinate binning approximation. `alignment_key: yaw` verifies this
+pointwise at runtime before concatenation. Each diode's dynamic mask is applied
+before fitting and pooling. In particular, saturated high-gain front points
+are absent and the rear diode supplies the direct-beam region.
+
+The early pair scale is a centre-estimation operating value, not yet an
+instrument response calibration suitable for transmission. It is retained as
+`pair_scale_factor` on the temporary rear work bundle for diagnostics.
 
 ### 10. Normalization factors are outputs
 
@@ -321,7 +361,7 @@ the acquisitions do not provide a clean I0-dark measurement. Non-positive I0
 samples are dynamically masked before division as invalid readouts; this is a
 validity check, not a dark correction.
 
-## Beam-centre determination in the initial implementation
+## Beam-centre determination
 
 The beam centre is an intensity centroid rather than a Gaussian-fit centre.
 This avoids assuming a symmetric or structureless analyser rocking curve.
@@ -331,21 +371,23 @@ For each physical low- or high-gain scan:
 1. Create axis-independent validity masks for non-finite data, invalid I0,
    diode saturation, and configured signal-to-uncertainty limits.
 2. Normalize to count time and I0.
-3. Use the unsaturated rear diode to locate a coarse maximum.
-4. Select the contiguous valid peak region within a configurable physical
+3. Scale and uncertainty-average the aligned front/rear pair as described
+   above.
+4. Use the merged profile to locate a coarse maximum.
+5. Select the contiguous valid peak region within a configurable physical
    half-width around that maximum.
-5. Subtract an optional scalar baseline. Zero is the default because the
+6. Subtract an optional scalar baseline. Zero is the default because the
    electronic dark has already been removed.
-6. Clip remaining negative intensity weights to zero and compute
+7. Clip remaining negative intensity weights to zero and compute
 
    `centre = sum(yaw * intensity) / sum(intensity)`.
-7. Recenter the window and repeat until convergence or a small iteration
+8. Recenter the window and repeat until convergence or a small iteration
    limit is reached.
-8. Store the centroid, propagated uncertainty, contributing-point count,
+9. Store the centroid, propagated uncertainty, contributing-point count,
    window, and convergence diagnostics.
 
-The centre found from the rear diode is applied to both diodes from that
-physical scan. Low- and high-gain scans are centred independently.
+The centre found from the merged pair is applied to both original diodes from
+that physical scan. Low- and high-gain scans are centred independently.
 
 ## Signed momentum transfer and wing policy in the initial implementation
 
@@ -440,7 +482,8 @@ reduce subreads and subtract exposure-adjusted diode darks
   -> load four sample and four background readouts
   -> build finite/I0/saturation/SNR masks
   -> normalize to count time and I0
-  -> determine four rear-diode centroids
+  -> scale and uncertainty-average four aligned front/rear pairs on copies
+  -> determine four merged-pair centroids and apply each to its two readouts
   -> convert yaw as a scattering angle to signed Q for all eight readouts
   -> integrate full scans and determine transmission
   -> divide sample readouts by transmission
