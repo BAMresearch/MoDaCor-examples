@@ -398,18 +398,15 @@ steps:
   # Precalculation for azimuthal averaging
   # -----------------------
   IP_static:
-    module: IndexPixels
+    module: IndexByCoordinate
     short_title: "Index pixels for averaging"
     requires_steps: [GX_static]
     configuration: 
-      averaging_direction: azimuthal
-      q_min: 0.01
-      q_max: 60.0
-      q_limits_unit: nm^-1
-      bin_type: log
-      psi_min: -180.0
-      psi_max: 180.0
-      psi_limits_unit: degrees
+      coordinate_key: Q
+      bin_min: 0.01
+      bin_max: 60.0
+      bin_units: nm^-1
+      spacing: log
       n_bins: 200
       with_processing_keys: [sample_static]
 
@@ -420,7 +417,7 @@ steps:
     requires_steps: [IP_static, BG]
     configuration:
       with_processing_keys: [sample, sample_static]  # target, source
-      data_keys: [Q, Psi, TwoTheta, CosAlpha, Omega, pixel_index]
+      data_keys: [Q, Psi, TwoTheta, CosAlpha, Omega, bin_index]
       copy: false
 
   # The following dynamic merge mutates its target mask in place. Copy this
@@ -550,9 +547,12 @@ steps:
     short_title: "Azimuthal averaging"
     requires_steps: [PL_2D]
     configuration: 
-      averaging_direction: azimuthal
-      use_signal_weights: true
-      use_signal_uncertainty_weights: false
+      value_key: signal
+      index_key: bin_index
+      axis_key: Q
+      mask_key: mask
+      use_value_weights: true
+      use_value_uncertainty_weights: false
       uncertainty_weight_key: null
       with_processing_keys: [sample]
 

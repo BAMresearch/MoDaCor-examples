@@ -74,18 +74,16 @@ steps:
       wavelength_units_source: calibration::/entry1/calibration_sample/beam/incident_wavelength@units
 
   IP_static:
-    module: IndexPixels
+    module: IndexByCoordinate
     short_title: Build coarse B21 q bins
     requires_steps: [GX_static]
     configuration:
-      averaging_direction: azimuthal
-      q_min: 0.0045
-      q_max: 0.34
-      q_limits_unit: 1/angstrom
-      bin_type: log
-      psi_min: -180.0
-      psi_max: 180.0
-      psi_limits_unit: degree
+      coordinate_key: Q
+      index_key: pixel_index
+      bin_min: 0.0045
+      bin_max: 0.34
+      bin_units: 1/angstrom
+      spacing: log
       n_bins: 50
       with_processing_keys: [static]
 

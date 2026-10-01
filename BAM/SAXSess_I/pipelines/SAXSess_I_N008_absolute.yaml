@@ -285,30 +285,42 @@ steps:
   # -----------------------
   # Precalculation for azimuthal averaging
   # -----------------------
+  MK_psi:
+    module: ThresholdMask
+    short_title: "Select the positive SAXSess azimuthal half-plane"
+    requires_steps: [AU]
+    configuration:
+      with_processing_keys: [sample]
+      source_basedata_key: Psi
+      target_mask_key: psi_range_mask
+      lower_bound: 0.0
+      upper_bound: 3.141592653589793  # Psi is stored in radians
+      mask_mode: outside
+
   IP:
-    module: IndexPixels
+    module: IndexByCoordinate
     short_title: "Pixel indexing for averaging"
     requires_steps: [AU]
     configuration: &index_az_common
-      averaging_direction: azimuthal
-      q_min: 0.1
-      q_max: 6.0
-      q_limits_unit: nm^-1
-      bin_type: log
-      psi_min: 0.0   # positive half only for SAXSess data, i.e. not below the direct beam
-      psi_max: 180.0
-      psi_limits_unit: degrees
+      coordinate_key: Q
+      bin_min: 0.1
+      bin_max: 6.0
+      bin_units: nm^-1
+      spacing: log
       n_bins: 100
       with_processing_keys: [sample]
 
   AV:
     module: IndexedAverager
     short_title: "Azimuthal averaging"
-    requires_steps: [IP]
+    requires_steps: [IP, MK_psi]
     configuration: &avg_az_common
-      averaging_direction: azimuthal
-      use_signal_weights: true
-      use_signal_uncertainty_weights: false
+      value_key: signal
+      index_key: bin_index
+      axis_key: Q
+      mask_key: psi_range_mask
+      use_value_weights: true
+      use_value_uncertainty_weights: false
       uncertainty_weight_key: null
       with_processing_keys: [sample]
 
@@ -388,8 +400,20 @@ steps:
         - /sample/signal/signal
         - /sample/signal/uncertainties/uncertainty_total
 
+  MK_psi_i:
+    module: ThresholdMask
+    short_title: "Select int. cal. positive azimuthal half-plane"
+    requires_steps: [TH_i]
+    configuration:
+      with_processing_keys: [intensity_calibration]
+      source_basedata_key: Psi
+      target_mask_key: psi_range_mask
+      lower_bound: 0.0
+      upper_bound: 3.141592653589793  # Psi is stored in radians
+      mask_mode: outside
+
   IP_i:
-    module: IndexPixels
+    module: IndexByCoordinate
     short_title: "Pixel indexing for int. cal. averaging"
     requires_steps: [TH_i]
     configuration:
@@ -399,7 +423,7 @@ steps:
   AV_i:
     module: IndexedAverager
     short_title: "Azim. avg. for int. cal."
-    requires_steps: [IP_i]
+    requires_steps: [IP_i, MK_psi_i]
     configuration:
       <<: *avg_az_common
       with_processing_keys: [intensity_calibration]

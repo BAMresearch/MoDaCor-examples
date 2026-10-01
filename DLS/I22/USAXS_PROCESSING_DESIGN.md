@@ -35,21 +35,29 @@ implementation where they differ.
 | 0 | 1, 4, 6 | Correct terminology, set the agreed final `q_min`, and define how negative results are assessed | Very low | Immediate clarity and a safer example default | None |
 | 1 | 7, 9 | Add schema-level `for_each` step-block expansion, including loading blocks | Medium | Very high reduction in authored YAML without weakening module contracts | None |
 | 2 | 2 | Generalize angle-to-Q conversion with explicit conventions and uncertainty-aware energy/wavelength input | Low--medium | Reusable for USAXS and step-scanning diffractometers | Explicit angle convention |
-| 3 | 3 | Add a general BaseData-coordinate indexer and retain `IndexPixels` as a scattering convenience interface | Medium--high | Reusable binning outside detector images and Q/Psi conventions | Generic bin/ROI/periodicity schema |
+| 3 | 3 | Replace `IndexPixels` with a general one-dimensional BaseData-coordinate indexer and make indexed reduction coordinate-agnostic | Medium | Reusable binning outside detector images and Q/Psi conventions | One-dimensional bin/edge/output schema |
 | 4 | 8 | Determine one beam centre per physical front/rear scan pair | Medium | Correct physical grouping and cleaner graph lanes | Paired-profile combination rule |
 | 5 | 5, 10 | Scale and merge all four series, determine and retain transmission, then subtract the merged background | High | Largest scientific improvement to the current correction chain | Common scale anchor, paired centres, merged-coordinate reduction |
 | 6 | 6 | Validate post-subtraction residuals statistically and at detector/gain handoffs | Medium | Distinguishes harmless negative noise from systematic mismatch | Revised merged pipeline |
+| 7 | Aside | Allow `XSGeometryFromPixelCoordinates` to accept photon energy as an alternative to wavelength | Low | Reuses the common uncertainty-aware energy/wavelength conversion and simplifies source adaptation | Existing photon conversion helper |
 
 Priority 1 is now implemented: schema-level `for_each` step-block expansion.
 The detailed design and implementation record is in the MoDaCor core note
 [`pipeline-foreach-expansion.md`](https://github.com/BAMResearch/MoDaCor/blob/main/docs/development/design/pipeline-foreach-expansion.md).
-The compact pipeline is 498 rather than 1,255 lines and expands to the same
+The compact pipeline is 504 rather than 1,255 lines and expands to the same
 123 ordinary steps. It reproduces the prior pooled signal, pooled Q, and
 transmission scalar exactly for sample scans 978497--978500 against background
 scans 977724--977727. The subsequent `AngleToQ` migration reproduced those
 values within floating-point roundoff before the independently agreed Q-range
 change. The pipeline now uses `q_min = 2e-3 1/nm` for final binning and the
 matching final-curve scaling interval.
+
+Priority 3 is now implemented. `IndexByCoordinate` replaces `IndexPixels`, and
+`IndexedAverager` consumes only the resulting index map plus its independently
+configured value, optional measured axis, and optional mask. All three real
+sample acquisitions still produce 386 populated bins (IDs 0--385). Their final
+Q and intensity arrays are exactly equal to the preceding implementation, and
+their transmission factors remain unchanged.
 
 ### 1. Eight diode readouts, not twelve scientific inputs
 
@@ -85,23 +93,49 @@ axes, rank, and weights. The material-attenuation path uses the same helper.
 
 ### 3. General BaseData indexing
 
-The bin-assignment operation should not fundamentally depend on the names `Q`
-and `Psi`, nor on pixels. A new generic indexer should accept one or more
-coordinate specifications referring to arbitrary BaseData keys. Each
-specification defines explicit or generated bin edges, units, linear/log
-spacing, and whether it is a binned coordinate or only a region-of-interest
-selector. Periodic coordinates require an explicit period and wrap policy.
+The bin-assignment operation does not depend on the names `Q` and `Psi`, nor on
+pixels. `IndexByCoordinate` bins exactly one arbitrary `BaseData` coordinate
+key. Its configuration defines explicit or generated bin
+edges, units, and linear or logarithmic spacing. Non-finite and out-of-range
+coordinates receive index `-1`.
 
-For multiple binned coordinates, the indexer should combine the per-coordinate
-indices into one flat integer index while retaining bin shape and edge metadata.
-All coordinate arrays must be broadcast-compatible with the indexed data
-domain. `IndexPixels` can remain as a backwards-compatible scattering adapter
-that translates Q/Psi configuration into this generic contract.
+Region selection does not belong in the indexer. Static or dynamic coordinate
+regions are expressed through ordinary mask-producing steps such as
+`ThresholdMask`, and the downstream averager applies the resulting mask. This
+keeps selection independently inspectable and avoids embedding periodic or
+technique-specific ROI policy in a general bin-assignment module.
 
-The numerical binning is straightforward. Most of the cost is defining units,
-periodic ranges, multidimensional flattening, metadata, and exact dependencies.
-Generalizing `IndexedAverager` is a separate decision; the generic index map can
-initially continue to feed the existing averager for signal and Q reduction.
+The indexer emits a dimensionless index map and the actual bin edges as
+`BaseData`. The edges document the assignment boundaries but are not an input
+to indexed reduction. Coordinate arrays must be broadcast-compatible with the
+indexed data domain. Because no production compatibility is required,
+`IndexPixels` is retired rather than retained as a scattering-specific adapter;
+the tracked example pipelines are migrated to the generic contract.
+
+Two-coordinate binning is deferred. Useful cases include Q/Psi cake plots and
+Qx/Qy reciprocal-space maps, but they require a multidimensional reduction
+contract, retained output shape, and multiple physical output axes. Treating
+them as a flattened one-dimensional index would hide that materially different
+result model.
+
+The agreed separation of concerns is:
+
+1. `IndexByCoordinate` reads one configured coordinate, constructs or accepts
+   bin edges, and writes `bin_index` plus diagnostic `bin_edges`. It does not
+   inspect signal values or apply masks. Bins are left-inclusive and
+   right-exclusive except that the final right edge is included.
+2. `IndexedAverager` reads a value, an index map, and an optional mask. It never
+   reads bin edges and never reassigns points. An optional `axis_key` identifies
+   a second value, such as Q, that is averaged over exactly the same accepted
+   observations and weights to provide the measured output axis.
+3. Only bins with positive total weight are emitted, ordered by their original
+   integer bin ID. The original IDs are retained as a diagnostic. Empty bins
+   are omitted because they have neither a measured signal nor an actual mean
+   coordinate.
+
+This keeps the index map reusable by a future indexed sum or integrator without
+adding reduction modes to `IndexedAverager`. Two-coordinate binning remains a
+separate future result model.
 
 ### 4. Conservative lower Q limit
 
@@ -381,13 +415,13 @@ It concatenates matching `BaseData` entries, converts compatible units, and
 preserves named uncertainties, weights, masks, and provenance. Its
 `sort_by` option defaults to `None`. When set to a concatenated BaseData key,
 all concatenated entries are reordered together; sorting is ascending unless
-`descending: true` is configured. Sorting is optional because `IndexPixels`
+`descending: true` is configured. Sorting is optional because `IndexByCoordinate`
 does not require monotonic input.
 
-The pooled data are reduced using the existing scattering modules:
+The pooled data are reduced using the generic indexing modules:
 
-1. `IndexPixels` assigns bins from actual Q values. For pure one-dimensional Q
-   binning, `Psi` becomes optional when no azimuthal ROI is requested.
+1. `IndexByCoordinate` assigns bins from actual Q values and retains the edges
+   as a diagnostic. Selection masks remain independent of bin assignment.
 2. `IndexedAverager` computes the weighted mean signal and the weighted mean of
    the actual Q values that entered each bin. Nominal bin centres are not used
    as output coordinates.
@@ -414,7 +448,7 @@ reduce subreads and subtract exposure-adjusted diode darks
   -> select negative wing and use abs(Q)
   -> determine and apply lognormal readout scales
   -> ConcatenateDatabundles
-  -> IndexPixels
+  -> IndexByCoordinate
   -> IndexedAverager
   -> write final I(Q), actual mean Q, Q scatter, masks, and diagnostics
 ```
@@ -432,9 +466,13 @@ axes. Its existing strict-monotonic behavior remains the default.
   consolidation.
 - Add `SubtractInterpolated1D` with nearest and linear remapping.
 - Add `ConcatenateDatabundles` with optional coordinated sorting.
-- Make `Psi` optional in `IndexPixels` for Q-only one-dimensional binning.
+- Add `IndexByCoordinate` for one-coordinate bin assignment and retire
+  `IndexPixels`.
 - Add bin-count, summed-weight, positive-weight-count, and effective-count
   diagnostics to `IndexedAverager`.
+- After the prioritized USAXS corrections, extend
+  `XSGeometryFromPixelCoordinates` to accept photon energy or wavelength using
+  the shared uncertainty-aware `BaseData` conversion helper.
 
 Every public step requires focused model/module tests, exact dependency-contract
 assertions, export through `modacor.modules`, and regenerated reference docs.

@@ -474,25 +474,31 @@ steps:
       descending: false
       source_index_key: source_index
   IP:
-    module: IndexPixels
+    module: IndexByCoordinate
     short_title: Index pooled USAXS points
     requires_steps: [POOL]
     configuration:
       with_processing_keys: [pooled]
-      averaging_direction: azimuthal
-      q_min: 0.002
-      q_max: 0.04
-      q_limits_unit: 1/nm
+      coordinate_key: Q
+      index_key: bin_index
+      edges_key: bin_edges
+      bin_min: 0.002
+      bin_max: 0.04
+      bin_units: 1/nm
       n_bins: 400
-      bin_type: log
+      spacing: log
   AV:
     module: IndexedAverager
     short_title: Average pooled USAXS points at actual mean Q
     requires_steps: [IP]
     configuration:
       with_processing_keys: [pooled]
-      averaging_direction: azimuthal
-      use_signal_weights: true
-      use_signal_uncertainty_weights: true
+      value_key: signal
+      index_key: bin_index
+      axis_key: Q
+      mask_key: Mask
+      bin_id_key: bin_id
+      use_value_weights: true
+      use_value_uncertainty_weights: true
       uncertainty_weight_key: subread_sem
       stats_keys: [signal, Q]
