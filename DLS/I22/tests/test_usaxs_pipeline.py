@@ -16,44 +16,59 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
     pipeline = Pipeline.from_yaml_file(PIPELINE_PATH)
     spec = pipeline.to_spec()
 
-    assert len(spec["nodes"]) == 155
-    assert sum("origin" in node for node in spec["nodes"]) == 152
+    assert len(spec["nodes"]) == 152
+    assert sum("origin" in node for node in spec["nodes"]) == 140
     assert Counter(node["module"] for node in spec["nodes"]) == {
         "AppendProcessingData": 28,
-        "ThresholdMask": 16,
-        "ApplyMask": 16,
-        "CopyDataBundleKeys": 16,
-        "DivideDatabundles": 14,
+        "CopyDataBundleKeys": 19,
+        "ThresholdMask": 13,
+        "ApplyMask": 13,
         "Divide": 12,
+        "IndexedAverager": 11,
+        "DivideDatabundles": 10,
+        "ConcatenateDatabundles": 10,
+        "MultiplyDatabundles": 10,
         "AngleToQ": 8,
-        "FindScaleFactor1D": 7,
-        "MultiplyDatabundles": 7,
-        "ConcatenateDatabundles": 5,
-        "IndexedAverager": 5,
+        "FindScaleFactor1D": 6,
         "FindCenterOfMass1D": 4,
-        "Integrate1D": 4,
-        "SubtractInterpolated1D": 4,
-        "BitwiseOrMasks": 4,
-        "Negate": 4,
-        "IndexByCoordinate": 1,
+        "IndexByCoordinate": 3,
+        "Integrate1D": 2,
+        "SubtractInterpolated1D": 1,
+        "BitwiseOrMasks": 1,
+        "Negate": 1,
     }
     assert "step_blocks" in pipeline.authored_spec
     assert "step_blocks" not in yaml.safe_load(pipeline.to_yaml())
 
     node_configs = {node["id"]: node["config"] for node in spec["nodes"]}
     assert node_configs["IP"]["bin_min"] == 0.002
-    assert {
-        node_configs["scale_readout.SLR.fit"]["fit_min_val"],
-        node_configs["scale_readout.SHF.fit"]["fit_min_val"],
-        node_configs["scale_readout.SHR.fit"]["fit_min_val"],
-    } == {0.002}
-    for pair in ("SL", "SH", "BL", "BH"):
-        pool_config = node_configs[f"prepare_pair_center.{pair}.pool"]
-        average_config = node_configs[f"prepare_pair_center.{pair}.average"]
-        assert pool_config["source_position_key"] == "pair_index"
-        assert pool_config["alignment_key"] == "yaw"
-        assert average_config["index_key"] == "pair_index"
-        assert average_config["uncertainty_weight_key"] == "subread_sem"
+    for acquisition in ("S", "B"):
+        for gain in ("low", "high"):
+            center_pool = node_configs[f"prepare_acquisition_center.{acquisition}.pool_{gain}"]
+            center_average = node_configs[f"prepare_acquisition_center.{acquisition}.average_{gain}"]
+            science_pool = node_configs[f"combine_acquisition_diode_pairs.{acquisition}.pool_{gain}"]
+            science_average = node_configs[f"combine_acquisition_diode_pairs.{acquisition}.average_{gain}"]
+            assert center_pool["source_position_key"] == "pair_index"
+            assert center_pool["alignment_key"] == "yaw"
+            assert science_pool["source_position_key"] == "pair_index"
+            assert science_pool["alignment_key"] == "Q"
+            assert center_average["index_key"] == "pair_index"
+            assert science_average["index_key"] == "pair_index"
+            assert center_average["uncertainty_weight_key"] == "subread_sem"
+            assert science_average["uncertainty_weight_key"] == "subread_sem"
+
+        diode_fit = node_configs[f"combine_acquisition_diode_pairs.{acquisition}.fit_low_rear_to_front"]
+        gain_fit = node_configs[f"scale_gain.{acquisition}.fit"]
+        assert (diode_fit["fit_min_val"], diode_fit["fit_max_val"]) == (-0.0008, 0.0008)
+        assert (gain_fit["fit_min_val"], gain_fit["fit_max_val"]) == (-0.005, -0.002)
+        assert diode_fit["scale_uncertainty_key"] == "diode_scale_fit"
+        assert gain_fit["scale_uncertainty_key"] == "gain_scale_fit"
+
+    assert node_configs["scale_gain.S.fit"]["with_processing_keys"] == ["SH", "SL"]
+    assert node_configs["scale_gain.B.fit"]["with_processing_keys"] == ["BH", "BL"]
+    for item in ("sample", "background"):
+        pool_config = node_configs[f"merge_acquisition.{item}.pool"]
+        assert pool_config["uncertainty_key_policy"] == "fill_zero"
 
 
 def test_usaxs_pipeline_graphs_group_each_authored_step_block() -> None:

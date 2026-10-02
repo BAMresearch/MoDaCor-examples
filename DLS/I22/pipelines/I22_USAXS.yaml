@@ -261,49 +261,50 @@ step_blocks:
           dividend_data_key: signal
           divisor_data_key: signal
 
-  prepare_pair_center:
+  prepare_acquisition_center:
+    # The high-gain front diode saturates before a reliable high-gain
+    # front/rear overlap is available. Determine the rear/front response from
+    # the low-gain direct beam and apply that same response factor to both gains.
     for_each:
-      SL:
-        front: SLF
-        rear: SLR
-        rear_work: SL_center_rear
-        pooled: SL_center_pool
-        merged: SL_center
-        requires: [normalize_flux.SLF.divide, normalize_flux.SLR.divide]
-      SH:
-        front: SHF
-        rear: SHR
-        rear_work: SH_center_rear
-        pooled: SH_center_pool
-        merged: SH_center
-        requires: [normalize_flux.SHF.divide, normalize_flux.SHR.divide]
-      BL:
-        front: BLF
-        rear: BLR
-        rear_work: BL_center_rear
-        pooled: BL_center_pool
-        merged: BL_center
-        requires: [normalize_flux.BLF.divide, normalize_flux.BLR.divide]
-      BH:
-        front: BHF
-        rear: BHR
-        rear_work: BH_center_rear
-        pooled: BH_center_pool
-        merged: BH_center
-        requires: [normalize_flux.BHF.divide, normalize_flux.BHR.divide]
+      S:
+        low_front: SLF
+        low_rear: SLR
+        high_front: SHF
+        high_rear: SHR
+        low_rear_work: S_center_low_rear
+        high_rear_work: S_center_high_rear
+        low_pool: SL_center_pool
+        high_pool: SH_center_pool
+        low_merged: SL_center
+        high_merged: SH_center
+        requires_low: [normalize_flux.SLF.divide, normalize_flux.SLR.divide]
+        requires_high: [normalize_flux.SHF.divide, normalize_flux.SHR.divide]
+      B:
+        low_front: BLF
+        low_rear: BLR
+        high_front: BHF
+        high_rear: BHR
+        low_rear_work: B_center_low_rear
+        high_rear_work: B_center_high_rear
+        low_pool: BL_center_pool
+        high_pool: BH_center_pool
+        low_merged: BL_center
+        high_merged: BH_center
+        requires_low: [normalize_flux.BLF.divide, normalize_flux.BLR.divide]
+        requires_high: [normalize_flux.BHF.divide, normalize_flux.BHR.divide]
     steps:
-      copy_rear:
+      copy_low_rear:
         module: CopyDataBundleKeys
-        requires_steps: "${requires}"
+        requires_steps: "${requires_low}"
         configuration:
-          with_processing_keys: ["${rear_work}", "${rear}"]
+          with_processing_keys: ["${low_rear_work}", "${low_rear}"]
           data_keys: [signal, yaw]
           copy: true
-      fit_rear_to_front:
+      fit_low_rear_to_front:
         module: FindScaleFactor1D
-        requires_steps: [.copy_rear]
+        requires_steps: [.copy_low_rear]
         configuration:
-          with_processing_keys: ["${rear_work}", "${front}"]
+          with_processing_keys: ["${low_rear_work}", "${low_front}"]
           signal_key: signal
           independent_axis_key: yaw
           fit_model: lognormal
@@ -312,31 +313,34 @@ step_blocks:
           require_overlap: true
           interpolation_kind: linear
           use_basedata_weights: true
-          scale_output_key: pair_scale_factor
-      scale_rear:
+          scale_output_key: diode_scale_factor
+          scale_uncertainty_key: diode_scale_fit
+          diagnostic_prefix: diode_fit
+      scale_low_rear:
         module: MultiplyDatabundles
-        requires_steps: [.fit_rear_to_front]
+        requires_steps: [.fit_low_rear_to_front]
         configuration:
-          with_processing_keys: ["${rear_work}", "${rear_work}"]
+          with_processing_keys: ["${low_rear_work}", "${low_rear_work}"]
           multiplicand_data_key: signal
-          multiplier_data_key: pair_scale_factor
-      pool:
+          multiplier_data_key: diode_scale_factor
+      pool_low:
         module: ConcatenateDatabundles
-        requires_steps: [.scale_rear]
+        requires_steps: [.scale_low_rear]
         configuration:
-          with_processing_keys: ["${front}", "${rear_work}"]
+          with_processing_keys: ["${low_front}", "${low_rear_work}"]
           data_keys: [signal, yaw]
-          output_processing_key: "${pooled}"
+          output_processing_key: "${low_pool}"
           sort_by: null
           source_index_key: diode_index
           source_position_key: pair_index
           alignment_key: yaw
-      average:
+          uncertainty_key_policy: fill_zero
+      average_low:
         module: IndexedAverager
-        requires_steps: [.pool]
+        requires_steps: [.pool_low]
         configuration:
-          with_processing_keys: ["${pooled}"]
-          output_processing_key: "${merged}"
+          with_processing_keys: ["${low_pool}"]
+          output_processing_key: "${low_merged}"
           value_key: signal
           index_key: pair_index
           axis_key: yaw
@@ -346,11 +350,67 @@ step_blocks:
           use_value_uncertainty_weights: true
           uncertainty_weight_key: subread_sem
           stats_keys: [signal, yaw]
-      center:
+      center_low:
         module: FindCenterOfMass1D
-        requires_steps: [.average]
+        requires_steps: [.average_low]
         configuration:
-          with_processing_keys: ["${merged}"]
+          with_processing_keys: ["${low_merged}"]
+          signal_key: signal
+          axis_key: yaw
+          mask_key: null
+          half_width: 25
+          width_units: microradian
+          baseline: 0
+          maximum_iterations: 5
+          convergence_tolerance: 0.001
+          output_key: beam_center
+          diagnostic_prefix: centroid
+      copy_high_rear:
+        module: CopyDataBundleKeys
+        requires_steps: "${requires_high}"
+        configuration:
+          with_processing_keys: ["${high_rear_work}", "${high_rear}"]
+          data_keys: [signal, yaw]
+          copy: true
+      scale_high_rear:
+        module: MultiplyDatabundles
+        requires_steps: [.copy_high_rear, .fit_low_rear_to_front]
+        configuration:
+          with_processing_keys: ["${high_rear_work}", "${low_rear_work}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: diode_scale_factor
+      pool_high:
+        module: ConcatenateDatabundles
+        requires_steps: [.scale_high_rear]
+        configuration:
+          with_processing_keys: ["${high_front}", "${high_rear_work}"]
+          data_keys: [signal, yaw]
+          output_processing_key: "${high_pool}"
+          sort_by: null
+          source_index_key: diode_index
+          source_position_key: pair_index
+          alignment_key: yaw
+          uncertainty_key_policy: fill_zero
+      average_high:
+        module: IndexedAverager
+        requires_steps: [.pool_high]
+        configuration:
+          with_processing_keys: ["${high_pool}"]
+          output_processing_key: "${high_merged}"
+          value_key: signal
+          index_key: pair_index
+          axis_key: yaw
+          mask_key: null
+          bin_id_key: point_index
+          use_value_weights: true
+          use_value_uncertainty_weights: true
+          uncertainty_weight_key: subread_sem
+          stats_keys: [signal, yaw]
+      center_high:
+        module: FindCenterOfMass1D
+        requires_steps: [.average_high]
+        configuration:
+          with_processing_keys: ["${high_merged}"]
           signal_key: signal
           axis_key: yaw
           mask_key: null
@@ -364,14 +424,14 @@ step_blocks:
 
   copy_center:
     for_each:
-      SLF: {target: SLF, source: SL_center, requires: [prepare_pair_center.SL.center]}
-      SLR: {target: SLR, source: SL_center, requires: [prepare_pair_center.SL.center]}
-      SHF: {target: SHF, source: SH_center, requires: [prepare_pair_center.SH.center]}
-      SHR: {target: SHR, source: SH_center, requires: [prepare_pair_center.SH.center]}
-      BLF: {target: BLF, source: BL_center, requires: [prepare_pair_center.BL.center]}
-      BLR: {target: BLR, source: BL_center, requires: [prepare_pair_center.BL.center]}
-      BHF: {target: BHF, source: BH_center, requires: [prepare_pair_center.BH.center]}
-      BHR: {target: BHR, source: BH_center, requires: [prepare_pair_center.BH.center]}
+      SLF: {target: SLF, source: SL_center, requires: [prepare_acquisition_center.S.center_low]}
+      SLR: {target: SLR, source: SL_center, requires: [prepare_acquisition_center.S.center_low]}
+      SHF: {target: SHF, source: SH_center, requires: [prepare_acquisition_center.S.center_high]}
+      SHR: {target: SHR, source: SH_center, requires: [prepare_acquisition_center.S.center_high]}
+      BLF: {target: BLF, source: BL_center, requires: [prepare_acquisition_center.B.center_low]}
+      BLR: {target: BLR, source: BL_center, requires: [prepare_acquisition_center.B.center_low]}
+      BHF: {target: BHF, source: BH_center, requires: [prepare_acquisition_center.B.center_high]}
+      BHR: {target: BHR, source: BH_center, requires: [prepare_acquisition_center.B.center_high]}
     steps:
       copy:
         module: CopyDataBundleKeys
@@ -405,12 +465,230 @@ step_blocks:
           output_key: Q
           output_units: 1/nm
 
+  combine_acquisition_diode_pairs:
+    # Refit the scientific rear/front response after centring, using only the
+    # low-gain direct-beam neighbourhood. Apply that same factor to both gains.
+    for_each:
+      S:
+        low_front: SLF
+        low_rear: SLR
+        high_front: SHF
+        high_rear: SHR
+        low_rear_work: S_science_low_rear
+        high_rear_work: S_science_high_rear
+        low_pool: SL_diode_pool
+        high_pool: SH_diode_pool
+        low_merged: SL
+        high_merged: SH
+        requires_low: [convert_q.SLF.q, convert_q.SLR.q]
+        requires_high: [convert_q.SHF.q, convert_q.SHR.q]
+      B:
+        low_front: BLF
+        low_rear: BLR
+        high_front: BHF
+        high_rear: BHR
+        low_rear_work: B_science_low_rear
+        high_rear_work: B_science_high_rear
+        low_pool: BL_diode_pool
+        high_pool: BH_diode_pool
+        low_merged: BL
+        high_merged: BH
+        requires_low: [convert_q.BLF.q, convert_q.BLR.q]
+        requires_high: [convert_q.BHF.q, convert_q.BHR.q]
+    steps:
+      copy_low_rear:
+        module: CopyDataBundleKeys
+        requires_steps: "${requires_low}"
+        configuration:
+          with_processing_keys: ["${low_rear_work}", "${low_rear}"]
+          data_keys: [signal, Q]
+          copy: true
+      fit_low_rear_to_front:
+        module: FindScaleFactor1D
+        requires_steps: [.copy_low_rear]
+        configuration:
+          with_processing_keys: ["${low_rear_work}", "${low_front}"]
+          signal_key: signal
+          independent_axis_key: Q
+          fit_model: lognormal
+          uncertainty_weight_key: subread_sem
+          fit_background: false
+          fit_min_val: -0.0008
+          fit_max_val: 0.0008
+          fit_val_units: 1/nm
+          require_overlap: true
+          interpolation_kind: linear
+          use_basedata_weights: true
+          scale_output_key: diode_scale_factor
+          scale_uncertainty_key: diode_scale_fit
+          diagnostic_prefix: diode_fit
+      scale_low_rear:
+        module: MultiplyDatabundles
+        requires_steps: [.fit_low_rear_to_front]
+        configuration:
+          with_processing_keys: ["${low_rear_work}", "${low_rear_work}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: diode_scale_factor
+      pool_low:
+        module: ConcatenateDatabundles
+        requires_steps: [.scale_low_rear]
+        configuration:
+          with_processing_keys: ["${low_front}", "${low_rear_work}"]
+          data_keys: [signal, Q]
+          output_processing_key: "${low_pool}"
+          sort_by: null
+          source_index_key: diode_index
+          source_position_key: pair_index
+          alignment_key: Q
+          uncertainty_key_policy: fill_zero
+      average_low:
+        module: IndexedAverager
+        requires_steps: [.pool_low]
+        configuration:
+          with_processing_keys: ["${low_pool}"]
+          output_processing_key: "${low_merged}"
+          value_key: signal
+          index_key: pair_index
+          axis_key: Q
+          mask_key: null
+          bin_id_key: point_index
+          use_value_weights: true
+          use_value_uncertainty_weights: true
+          uncertainty_weight_key: subread_sem
+          stats_keys: [signal, Q]
+      copy_high_rear:
+        module: CopyDataBundleKeys
+        requires_steps: "${requires_high}"
+        configuration:
+          with_processing_keys: ["${high_rear_work}", "${high_rear}"]
+          data_keys: [signal, Q]
+          copy: true
+      scale_high_rear:
+        module: MultiplyDatabundles
+        requires_steps: [.copy_high_rear, .fit_low_rear_to_front]
+        configuration:
+          with_processing_keys: ["${high_rear_work}", "${low_rear_work}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: diode_scale_factor
+      pool_high:
+        module: ConcatenateDatabundles
+        requires_steps: [.scale_high_rear]
+        configuration:
+          with_processing_keys: ["${high_front}", "${high_rear_work}"]
+          data_keys: [signal, Q]
+          output_processing_key: "${high_pool}"
+          sort_by: null
+          source_index_key: diode_index
+          source_position_key: pair_index
+          alignment_key: Q
+          uncertainty_key_policy: fill_zero
+      average_high:
+        module: IndexedAverager
+        requires_steps: [.pool_high]
+        configuration:
+          with_processing_keys: ["${high_pool}"]
+          output_processing_key: "${high_merged}"
+          value_key: signal
+          index_key: pair_index
+          axis_key: Q
+          mask_key: null
+          bin_id_key: point_index
+          use_value_weights: true
+          use_value_uncertainty_weights: true
+          uncertainty_weight_key: subread_sem
+          stats_keys: [signal, Q]
+
+  scale_gain:
+    # Fit each acquisition internally. No sample/background response fit is made.
+    for_each:
+      S: {high: SH, low: SL, requires: [combine_acquisition_diode_pairs.S.average_high, combine_acquisition_diode_pairs.S.average_low]}
+      B: {high: BH, low: BL, requires: [combine_acquisition_diode_pairs.B.average_high, combine_acquisition_diode_pairs.B.average_low]}
+    steps:
+      fit:
+        module: FindScaleFactor1D
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${high}", "${low}"]
+          signal_key: signal
+          independent_axis_key: Q
+          fit_model: lognormal
+          uncertainty_weight_key: subread_sem
+          fit_background: false
+          fit_min_val: -0.005
+          fit_max_val: -0.002
+          fit_val_units: 1/nm
+          require_overlap: true
+          interpolation_kind: linear
+          use_basedata_weights: true
+          scale_output_key: gain_scale_factor
+          scale_uncertainty_key: gain_scale_fit
+          diagnostic_prefix: gain_fit
+      apply:
+        module: MultiplyDatabundles
+        requires_steps: [.fit]
+        configuration:
+          with_processing_keys: ["${high}", "${high}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: gain_scale_factor
+
+  merge_acquisition:
+    for_each:
+      sample:
+        low: SL
+        high: SH
+        pooled: sample_gain_pool
+        merged: sample_merged
+        requires: [combine_acquisition_diode_pairs.S.average_low, scale_gain.S.apply]
+      background:
+        low: BL
+        high: BH
+        pooled: background_gain_pool
+        merged: background_merged
+        requires: [combine_acquisition_diode_pairs.B.average_low, scale_gain.B.apply]
+    steps:
+      pool:
+        module: ConcatenateDatabundles
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${low}", "${high}"]
+          data_keys: [signal, Q]
+          output_processing_key: "${pooled}"
+          sort_by: null
+          source_index_key: gain_index
+          uncertainty_key_policy: fill_zero
+      index:
+        module: IndexByCoordinate
+        requires_steps: [.pool]
+        configuration:
+          with_processing_keys: ["${pooled}"]
+          coordinate_key: Q
+          index_key: merge_bin_index
+          edges_key: merge_bin_edges
+          bin_min: -0.04
+          bin_max: 0.04
+          bin_units: 1/nm
+          n_bins: 20000
+          spacing: linear
+      average:
+        module: IndexedAverager
+        requires_steps: [.index]
+        configuration:
+          with_processing_keys: ["${pooled}"]
+          output_processing_key: "${merged}"
+          value_key: signal
+          index_key: merge_bin_index
+          axis_key: Q
+          mask_key: null
+          bin_id_key: merge_bin_id
+          use_value_weights: true
+          use_value_uncertainty_weights: true
+          uncertainty_weight_key: subread_sem
+          stats_keys: [signal, Q]
+
   integrate_transmission:
     for_each:
-      sample_front: {processing_key: SLF, output_key: sample_integral, requires: [convert_q.SLF.q]}
-      background_front: {processing_key: BLF, output_key: background_integral, requires: [convert_q.BLF.q]}
-      sample_rear: {processing_key: SLR, output_key: sample_rear_integral, requires: [convert_q.SLR.q]}
-      background_rear: {processing_key: BLR, output_key: background_rear_integral, requires: [convert_q.BLR.q]}
+      sample: {processing_key: sample_merged, output_key: sample_integral, requires: [merge_acquisition.sample.average]}
+      background: {processing_key: background_merged, output_key: background_integral, requires: [merge_acquisition.background.average]}
     steps:
       integrate:
         module: Integrate1D
@@ -418,155 +696,102 @@ step_blocks:
         configuration:
           with_processing_keys: ["${processing_key}"]
           signal_key: signal
-          axis_key: yaw
-          mask_key: Mask
+          axis_key: Q
+          mask_key: null
           method: trapezoid
           sort_axis: true
-          duplicate_axis: mean
+          duplicate_axis: error
           output_processing_keys: ["${output_key}"]
 
-  determine_transmission:
-    for_each:
-      front:
-        numerator: sample_integral
-        denominator: background_integral
-        requires: [integrate_transmission.sample_front.integrate, integrate_transmission.background_front.integrate]
-      rear:
-        numerator: sample_rear_integral
-        denominator: background_rear_integral
-        requires: [integrate_transmission.sample_rear.integrate, integrate_transmission.background_rear.integrate]
-    steps:
-      divide:
-        module: DivideDatabundles
-        requires_steps: "${requires}"
-        configuration:
-          with_processing_keys: ["${numerator}", "${denominator}"]
-          dividend_data_key: signal
-          divisor_data_key: signal
-
-  normalize_transmission:
-    for_each:
-      SLF: {processing_key: SLF, requires: [convert_q.SLF.q, determine_transmission.front.divide]}
-      SLR: {processing_key: SLR, requires: [convert_q.SLR.q, determine_transmission.front.divide]}
-      SHF: {processing_key: SHF, requires: [convert_q.SHF.q, determine_transmission.front.divide]}
-      SHR: {processing_key: SHR, requires: [convert_q.SHR.q, determine_transmission.front.divide]}
-    steps:
-      divide:
-        module: DivideDatabundles
-        requires_steps: "${requires}"
-        configuration:
-          with_processing_keys: ["${processing_key}", sample_integral]
-          dividend_data_key: signal
-          divisor_data_key: signal
-
-  prepare_final_wing:
-    for_each:
-      SLF: {sample: SLF, background: BLF, requires: [normalize_transmission.SLF.divide, convert_q.BLF.q]}
-      SLR: {sample: SLR, background: BLR, requires: [normalize_transmission.SLR.divide, convert_q.BLR.q]}
-      SHF: {sample: SHF, background: BHF, requires: [normalize_transmission.SHF.divide, convert_q.BHF.q]}
-      SHR: {sample: SHR, background: BHR, requires: [normalize_transmission.SHR.divide, convert_q.BHR.q]}
-    steps:
-      subtract_background:
-        module: SubtractInterpolated1D
-        requires_steps: "${requires}"
-        configuration:
-          with_processing_keys: ["${sample}", "${background}"]
-          signal_key: signal
-          axis_key: Q
-          mask_key: Mask
-          mode: nearest
-          output_signal_key: signal
-          output_mask_key: remap_mask
-      preserve_wings:
-        module: CopyDataBundleKeys
-        requires_steps: [.subtract_background]
-        configuration:
-          with_processing_keys: ["${sample}", "${sample}"]
-          key_map:
-            signal: both_wings_signal
-            Q: signed_Q
-      select_negative:
-        module: ThresholdMask
-        requires_steps: [.preserve_wings]
-        configuration:
-          with_processing_keys: ["${sample}"]
-          source_basedata_key: Q
-          target_mask_key: wing_mask
-          lower_bound: 0
-          mask_mode: inside
-      combine_masks:
-        module: BitwiseOrMasks
-        requires_steps: [.select_negative]
-        configuration:
-          with_processing_keys: ["${sample}"]
-          target_mask_key: Mask
-          source_mask_keys: [remap_mask, wing_mask]
-      apply_mask:
-        module: ApplyMask
-        requires_steps: [.combine_masks]
-        configuration:
-          with_processing_keys: ["${sample}"]
-          mask_key: Mask
-          basedata_to_mask: [signal]
-          masked_value: nan
-      positive_q:
-        module: Negate
-        requires_steps: [.apply_mask]
-        configuration:
-          with_processing_keys: ["${sample}"]
-          data_key: Q
-
-  scale_readout:
-    for_each:
-      SLR: {processing_key: SLR, requires: [prepare_final_wing.SLR.positive_q, prepare_final_wing.SLF.positive_q]}
-      SHF: {processing_key: SHF, requires: [prepare_final_wing.SHF.positive_q, prepare_final_wing.SLF.positive_q]}
-      SHR: {processing_key: SHR, requires: [prepare_final_wing.SHR.positive_q, prepare_final_wing.SLF.positive_q]}
-    steps:
-      fit:
-        module: FindScaleFactor1D
-        requires_steps: "${requires}"
-        configuration:
-          with_processing_keys: ["${processing_key}", SLF]
-          signal_key: signal
-          independent_axis_key: Q
-          fit_model: lognormal
-          uncertainty_weight_key: subread_sem
-          fit_background: false
-          fit_min_val: 0.002
-          fit_max_val: 0.03
-          fit_val_units: 1/nm
-          require_overlap: true
-          interpolation_kind: linear
-          use_basedata_weights: true
-          scale_output_key: scale_factor
-      apply:
-        module: MultiplyDatabundles
-        requires_steps: [.fit]
-        configuration:
-          with_processing_keys: ["${processing_key}", "${processing_key}"]
-          multiplicand_data_key: signal
-          multiplier_data_key: scale_factor
-
 steps:
-  POOL:
-    module: ConcatenateDatabundles
-    short_title: Pool scaled diode readouts
-    requires_steps:
-      - prepare_final_wing.SLF.positive_q
-      - scale_readout.SLR.apply
-      - scale_readout.SHF.apply
-      - scale_readout.SHR.apply
+  COPY_TRANSMISSION:
+    module: CopyDataBundleKeys
+    short_title: Preserve merged sample integral as transmission numerator
+    requires_steps: [integrate_transmission.sample.integrate]
     configuration:
-      with_processing_keys: [SLF, SLR, SHF, SHR]
-      data_keys: [signal, Q, Mask]
-      output_processing_key: pooled
-      sort_by: null
-      descending: false
-      source_index_key: source_index
+      with_processing_keys: [transmission_factor, sample_integral]
+      data_keys: [signal]
+      copy: true
+  TRANSMISSION:
+    module: DivideDatabundles
+    short_title: Determine merged sample/background transmission
+    requires_steps: [COPY_TRANSMISSION, integrate_transmission.background.integrate]
+    configuration:
+      with_processing_keys: [transmission_factor, background_integral]
+      dividend_data_key: signal
+      divisor_data_key: signal
+  NORMALIZE_TRANSMISSION:
+    module: DivideDatabundles
+    short_title: Normalize merged sample by transmission
+    requires_steps: [TRANSMISSION, merge_acquisition.sample.average]
+    configuration:
+      with_processing_keys: [sample_merged, transmission_factor]
+      dividend_data_key: signal
+      divisor_data_key: signal
+  SUBTRACT_BACKGROUND:
+    module: SubtractInterpolated1D
+    short_title: Remap and subtract merged background
+    requires_steps: [NORMALIZE_TRANSMISSION, merge_acquisition.background.average]
+    configuration:
+      with_processing_keys: [sample_merged, background_merged]
+      signal_key: signal
+      axis_key: Q
+      mask_key: null
+      mode: nearest
+      output_signal_key: signal
+      output_mask_key: remap_mask
+  PRESERVE_WINGS:
+    module: CopyDataBundleKeys
+    requires_steps: [SUBTRACT_BACKGROUND]
+    configuration:
+      with_processing_keys: [sample_merged, sample_merged]
+      key_map:
+        signal: both_wings_signal
+        Q: signed_Q
+  SELECT_NEGATIVE:
+    module: ThresholdMask
+    requires_steps: [PRESERVE_WINGS]
+    configuration:
+      with_processing_keys: [sample_merged]
+      source_basedata_key: Q
+      target_mask_key: wing_mask
+      lower_bound: 0
+      mask_mode: inside
+  COMBINE_FINAL_MASKS:
+    module: BitwiseOrMasks
+    requires_steps: [SELECT_NEGATIVE]
+    configuration:
+      with_processing_keys: [sample_merged]
+      target_mask_key: remap_mask
+      source_mask_keys: [wing_mask]
+  APPLY_FINAL_MASK:
+    module: ApplyMask
+    requires_steps: [COMBINE_FINAL_MASKS]
+    configuration:
+      with_processing_keys: [sample_merged]
+      mask_key: remap_mask
+      basedata_to_mask: [signal]
+      masked_value: nan
+  POSITIVE_Q:
+    module: Negate
+    requires_steps: [APPLY_FINAL_MASK]
+    configuration:
+      with_processing_keys: [sample_merged]
+      data_key: Q
+  FINAL_COPY:
+    module: CopyDataBundleKeys
+    requires_steps: [POSITIVE_Q]
+    configuration:
+      with_processing_keys: [pooled, sample_merged]
+      key_map:
+        signal: signal
+        Q: Q
+        remap_mask: Mask
+      copy: true
   IP:
     module: IndexByCoordinate
-    short_title: Index pooled USAXS points
-    requires_steps: [POOL]
+    short_title: Index corrected merged USAXS points
+    requires_steps: [FINAL_COPY]
     configuration:
       with_processing_keys: [pooled]
       coordinate_key: Q
@@ -579,7 +804,7 @@ steps:
       spacing: log
   AV:
     module: IndexedAverager
-    short_title: Average pooled USAXS points at actual mean Q
+    short_title: Average corrected merged USAXS points at actual mean Q
     requires_steps: [IP]
     configuration:
       with_processing_keys: [pooled]

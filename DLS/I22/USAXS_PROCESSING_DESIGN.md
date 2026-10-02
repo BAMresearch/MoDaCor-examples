@@ -1,7 +1,7 @@
 # I22 USAXS processing design
 
 Status: initial implementation validated 2026-09-29; revision backlog agreed
-2026-09-30; priorities 0--2 implemented and validated
+2026-09-30; priorities 0--5 implemented and validated 2026-10-02
 
 ## Purpose
 
@@ -59,18 +59,21 @@ sample acquisitions still produce 386 populated bins (IDs 0--385). Their final
 Q and intensity arrays are exactly equal to the preceding implementation, and
 their transmission factors remain unchanged.
 
-Priority 4 is now implemented as a centre-estimation branch. Each simultaneous
-front/rear pair is response-scaled, concatenated, and reduced by its original
-point position before one centroid is calculated and copied to both original
-readouts. The branch operates on copies, so its provisional scale factor does
-not modify the diode data used by the later correction chain. The expanded DAG
-now has 155 ordinary steps; the authored `prepare_pair_center` block keeps the
-four identical physical-scan lanes collapsed and readable.
+Priorities 4 and 5 are now implemented. Each simultaneous front/rear pair is
+response-scaled and averaged before centroid determination. The low-gain
+rear/front response factor is then refitted near the centred direct beam and
+applied to both gains. The resulting low- and high-gain pair curves are fitted,
+pooled without a hard handoff, and averaged onto a shared fine signed-Q grid.
+Transmission and background subtraction operate on those merged acquisition
+curves. The expanded DAG has 152 ordinary steps; mapped blocks keep the
+sample/background and gain lanes visible in the authored YAML and graph.
 
-Across the three example samples, the merged-pair centres differ by less than
-0.17 microradian from the previous rear-only fallback. All runs still produce
-386 populated final bins, and their established front-diode transmission
-values remain `0.590794146`, `0.590196960`, and `0.590990570` respectively.
+Across the three example samples, the low-gain rear/front response factor is
+`29.760`--`29.813`, compared with `29.851` for the reused background. The
+sample high-to-low factor is `0.9807`--`1.0067`, while the background factor is
+`1.0324`. The merged full-scan transmission values are `0.58133`, `0.58290`,
+and `0.58467`. All runs produce 386 populated final bins with first mean Q near
+`2.008e-3 1/nm`.
 
 ### 1. Eight diode readouts, not twelve scientific inputs
 
@@ -158,48 +161,64 @@ final binning and any final-curve scaling interval whose lower boundary is
 intended to match the usable Q range. Full signed scans remain available for
 centering, scaling studies, transmission, and wing diagnostics.
 
-All three example acquisitions execute the current 155-step pipeline with this limit.
-Their final curves contain 386 points, with the first mean bin Q at about
-`2.008e-3 1/nm`; the transmission factors remain approximately 0.5902--0.5910.
+All three example acquisitions execute the current 152-step pipeline with this
+limit. Their final curves contain 386 points, with the first mean bin Q at about
+`2.008e-3 1/nm`.
 
 ### 5. Transmission from the merged four-series measurement
 
-The target transmission calculation uses all four normalized series for an
-acquisition: front and rear diodes at low and high gain. The four sample series
-are brought onto one response scale and merged; the four background series are
-treated equivalently. Transmission is then calculated over the full valid
-merged scans:
+The implemented transmission calculation uses all four normalized series for
+an acquisition: front and rear diodes at low and high gain. The four sample
+series are brought onto one response scale and merged; the four background
+series are treated equivalently. Transmission is then calculated over the full
+valid merged scans:
 
 ```text
 T = integral(merged_sample) / integral(merged_background)
 ```
 
 Merging means an uncertainty-aware average after response scaling, not a raw
-sum that would count the same photons two or four times. Sample and background
-must share a common response anchor, for example low-gain front fixed to one,
-so independent arbitrary rescaling cannot bias `T`. Saturated or otherwise
-invalid points contribute no weight.
+sum that would count the same photons two or four times. The low-gain front
+diode is the response anchor within both sample and background. Saturated or
+otherwise invalid points contribute no weight. There is no fitted scale between
+the sample and background acquisitions, because their relative magnitude
+contains the unknown transmission.
 
 The sample merged curve is divided by `T`; only then is the merged background
-remapped and subtracted. Background subtraction already follows transmission
-normalization in the initial pipeline. The required change is therefore the
-four-series merged input to transmission and subtraction, rather than their
-relative ordering.
+remapped by nearest neighbour and subtracted. The reusable remapper preserves
+the sample Q values and invalidates points beyond the background domain.
 
-This revision moves diode/gain response scaling before transmission and
-background subtraction. It consequently requires a reviewed rule for deriving
-response factors without relying on the already background-subtracted curve.
+Response calibration follows two levels:
 
-The paired-centre implementation supplied a useful real-data warning for this
-later work. Full-scan low-gain front/rear factors are stable between sample and
-background (about 29.7 and 29.8), but the corresponding independently fitted
-high-gain factors are not (about 3.2 and 0.49 for the first sample/background
-pair). Using all of those independent factors in an early four-series merge
-changed the first transmission estimate from about 0.591 to 0.333. Therefore
-the centre-estimation merge is deliberately isolated for now. A merged
-transmission must use shared response calibration, or an explicitly reviewed
-joint/iterative estimator, rather than independently rescaling sample and
-background.
+1. Fit the low-gain rear diode onto the simultaneous low-gain front diode over
+   `-8e-4 <= Q <= 8e-4 1/nm`, where the direct beam provides strong overlap.
+   Apply that same rear/front factor to the rear diode at both gains. This is
+   provisional pending beamline confirmation that both rear-amplifier settings
+   have the same gain ratio, but the measured rear low/high direct-beam
+   integrals support that assumption to about one percent.
+2. Average the aligned front and scaled-rear values separately for low and high
+   gain. Fit the merged high-gain curve onto the merged low-gain reference over
+   the negative-wing interval `-5e-3 <= Q <= -2e-3 1/nm`.
+
+The low/high curves are not joined at a threshold. Both valid curves are
+concatenated, assigned to a shared fine signed-Q grid, and averaged within each
+occupied bin. This makes the overlap statistically useful and avoids an
+arbitrary handoff discontinuity.
+
+Both fit levels retain the fitted scalar, its named uncertainty component,
+point count, actual fit range, and reduced chi-square. Reduced chi-square is
+`1.93`--`3.80` for the sample diode fits and `5.93`--`12.20` for the sample gain
+fits. These values warn that the selected `subread_sem` does not fully explain
+the pointwise curve mismatch; the formal factor uncertainty is therefore not
+silently enlarged or presented as a goodness-of-fit substitute.
+
+The named factor uncertainties propagate through BaseData arithmetic and are
+preserved when curves with different uncertainty components are concatenated.
+They are scalar calibration uncertainties, however, and hence correlated
+across every point to which a factor was applied. The present diagonal
+uncertainty representation carries their marginal contribution but indexed
+averaging and integration cannot preserve that covariance. Final uncertainties
+must not yet be interpreted as a complete covariance-aware budget.
 
 ### 6. Negative background-subtracted intensities
 
@@ -269,20 +288,24 @@ There are four physical front/rear pairs:
 
 Each pair yields one shared beam centre used by both readouts. Low/high and
 sample/background profiles must not be combined merely because they use the
-same centering module. The `prepare_pair_center` repeated block invokes the
-same explicit chain four times:
+same centering module. The `prepare_acquisition_center` repeated block invokes
+the chain once for the sample acquisition and once for the background, while
+keeping independent low- and high-gain centroid branches inside each item:
 
 1. copy the rear signal so centre preparation cannot mutate a scientific
    readout;
-2. fit that copy to the front response in yaw space with the configured
-   `subread_sem` weighting;
-3. apply the fitted scalar only to the copy;
-4. concatenate the front and scaled-rear profiles while recording both diode
+2. fit the low-gain rear copy to the low-gain front response in yaw space with
+   the configured `subread_sem` weighting;
+3. apply the same fitted rear/front scalar to the low- and high-gain rear
+   copies;
+4. concatenate each front and scaled-rear profile while recording both diode
    identity and source-local point position;
 5. use the source-local position directly as the `IndexedAverager` group map,
    averaging the actual yaw and signal with the selected uncertainty weights;
-6. determine the iterative centroid of that merged profile; and
-7. copy the shared centre to both original readouts before `AngleToQ`.
+6. determine an independent iterative centroid for the low- and high-gain
+   merged profiles; and
+7. copy each shared centre to the two original readouts from that gain scan
+   before `AngleToQ`.
 
 Front and rear yaw arrays are identical within each physical scan. The
 source-position index is therefore an exact aligned-observation grouping, not
@@ -291,9 +314,10 @@ pointwise at runtime before concatenation. Each diode's dynamic mask is applied
 before fitting and pooling. In particular, saturated high-gain front points
 are absent and the rear diode supplies the direct-beam region.
 
-The early pair scale is a centre-estimation operating value, not yet an
-instrument response calibration suitable for transmission. It is retained as
-`pair_scale_factor` on the temporary rear work bundle for diagnostics.
+The early full-scan factor remains isolated on temporary centre-estimation
+bundles. After centering and Q conversion, the scientific rear/front factor is
+refitted over the configured direct-beam Q interval for response scaling and
+transmission.
 
 ### 10. Normalization factors are outputs
 
@@ -303,18 +327,18 @@ semantics, and provenance. A pointwise I0 normalization factor is an array; the
 merged transmission is a scalar dimensionless factor. They should not be
 conflated merely because both are divisors.
 
-For transmission, the revised pipeline should expose at least:
+For transmission, the pipeline exposes:
 
 - merged sample integral;
 - merged background integral;
 - scalar `transmission_factor` with uncertainty;
 - the transmission-normalized sample curve.
 
-These values should use explicit diagnostic names rather than overwriting an
-object still named `sample_integral`. Whether factor determination and factor
-application remain separate steps or are exposed by one normalizer will be
-settled with the normalization-module contract; in either case the factor must
-remain addressable ProcessingData.
+Factor determination and application are separate graph steps. The numerator
+is copied to `transmission_factor`, divided by `background_integral`, and then
+used to normalize `sample_merged`. The original `sample_integral` and
+`background_integral` remain addressable diagnostics rather than being
+overwritten.
 
 ## Package boundary
 
@@ -389,7 +413,7 @@ For each physical low- or high-gain scan:
 The centre found from the merged pair is applied to both original diodes from
 that physical scan. Low- and high-gain scans are centred independently.
 
-## Signed momentum transfer and wing policy in the initial implementation
+## Signed momentum transfer and wing policy
 
 The `AngleToQ` module treats analyser yaw as a signed scattering angle, uses
 the measured photon energy through the shared uncertainty-aware
@@ -402,29 +426,24 @@ Q = 4*pi/wavelength * sin((yaw - yaw_zero)/2)
 It retains signed Q so the two analyser wings remain distinguishable. The
 positive wing may contain additional analyser-crystal scattering. It remains
 part of the full-scan transmission integral because those photons were not
-absorbed by the sample. The initial final scattering product uses the negative
-wing and converts it to positive `abs(Q)` before logarithmic binning. Positive,
-negative, and asymmetry diagnostics remain available.
+absorbed by the sample. The final scattering product uses the negative wing
+and negates Q before logarithmic binning. Both wings are retained before this
+selection for diagnostics.
 
-## Transmission and background subtraction in the initial implementation
+## Transmission and background subtraction
 
 Transmission is evaluated after count-time and I0 normalization and before
-background subtraction. The primary estimate uses the unsaturated low-gain
-front diode; the low-gain rear diode is a consistency check.
-
-Both sample and empty-furnace curves are integrated over the full valid scan.
-The yaw samples are stably sorted for quadrature. Exact repeated encoder
-coordinates are consolidated by arithmetic-mean intensity, with independent
-uncertainties propagated to the mean; this avoids assigning an arbitrary
-finite integration interval to either repeated observation.
+background subtraction. Both the sample and empty-furnace inputs are the
+merged front/rear and low/high acquisition curves described above. Their Q
+samples are stably sorted for quadrature.
 The scalar transmission is
 
 ```text
 T = integral(sample) / integral(empty_furnace)
 ```
 
-The sample readouts are divided by `T`, then each matching empty-furnace
-readout is remapped and subtracted.
+The merged sample is divided by `T`, then the merged empty-furnace curve is
+remapped and subtracted.
 
 The reusable subtraction module supports two explicit remapping modes:
 
@@ -441,24 +460,26 @@ component using its interpolation coefficients, not by interpolating standard
 deviations directly. The sample coordinate is preserved as the output
 coordinate.
 
-## Scaling, concatenation, and averaging in the initial implementation
+## Scaling, concatenation, and averaging
 
-After transmission normalization and background subtraction, the four sample
-readouts are scaled to one selected reference readout. `FindScaleFactor1D`
-gains a lognormal mode based on the uncertainty-weighted mean log ratio over
-positive, valid overlap points. The user explicitly selects the propagated
-uncertainty component used for fitting weights; the pipeline does not invent a
-combined uncertainty for this purpose. Before interpolation, exact repeated
-coordinates are consolidated by inverse-variance averaging using that same
-selected uncertainty component.
+Response scaling occurs before transmission normalization and background
+subtraction. `FindScaleFactor1D` uses a lognormal fit based on the
+uncertainty-weighted mean log ratio over positive, valid overlap points. The
+user explicitly selects the propagated uncertainty component used for fitting
+weights; the pipeline does not invent a combined uncertainty for this purpose.
+Before interpolation, exact repeated coordinates are consolidated by
+inverse-variance averaging using that same selected uncertainty component.
 
 The scaled curves are pooled with a generic `ConcatenateDatabundles` step.
 It concatenates matching `BaseData` entries, converts compatible units, and
-preserves named uncertainties, weights, masks, and provenance. Its
-`sort_by` option defaults to `None`. When set to a concatenated BaseData key,
-all concatenated entries are reordered together; sorting is ascending unless
-`descending: true` is configured. Sorting is optional because `IndexByCoordinate`
-does not require monotonic input.
+preserves named uncertainties, weights, masks, and provenance. Its `sort_by`
+option defaults to `None`. When set to a concatenated BaseData key, all
+concatenated entries are reordered together; sorting is ascending unless
+`descending: true` is configured. Sorting is optional because
+`IndexByCoordinate` does not require monotonic input. The opt-in
+`uncertainty_key_policy: fill_zero` takes the union of named uncertainty
+components and supplies zero for a component absent from one input. This is
+used when only a scaled branch carries the corresponding fit uncertainty.
 
 The pooled data are reduced using the generic indexing modules:
 
@@ -475,29 +496,32 @@ The pooled data are reduced using the generic indexing modules:
 The user selects `uncertainty_weight_key` when inverse-variance weighting is
 enabled. No uncertainty components are combined implicitly.
 
-## Initial pipeline order
+## Current pipeline order
 
 ```text
 reduce subreads and subtract exposure-adjusted diode darks
   -> load four sample and four background readouts
   -> build finite/I0/saturation/SNR masks
   -> normalize to count time and I0
-  -> scale and uncertainty-average four aligned front/rear pairs on copies
+  -> provisionally scale and uncertainty-average aligned front/rear pairs on copies
   -> determine four merged-pair centroids and apply each to its two readouts
   -> convert yaw as a scattering angle to signed Q for all eight readouts
-  -> integrate full scans and determine transmission
-  -> divide sample readouts by transmission
-  -> nearest or linear remapped background subtraction per readout
+  -> fit the low-gain rear/front response near the direct beam
+  -> apply each acquisition's rear/front factor to both gains
+  -> uncertainty-average the aligned front/rear points at each gain
+  -> fit each merged high-gain curve onto its low-gain reference
+  -> concatenate low/high points and average on a common fine signed-Q grid
+  -> integrate full merged scans and determine transmission
+  -> divide the merged sample by transmission
+  -> nearest-neighbour remap and subtract the merged background
   -> select negative wing and use abs(Q)
-  -> determine and apply lognormal readout scales
-  -> ConcatenateDatabundles
   -> IndexByCoordinate
   -> IndexedAverager
   -> write final I(Q), actual mean Q, Q scatter, masks, and diagnostics
 ```
 
-`Integrate1D` gains an opt-in coordinate-sorting mode for jittered acquisition
-axes. Its existing strict-monotonic behavior remains the default.
+`Integrate1D` uses its opt-in coordinate-sorting mode for the merged acquisition
+curves; strict monotonicity remains the module default.
 
 ## Core MoDaCor work
 
@@ -539,17 +563,21 @@ assertions, export through `modacor.modules`, and regenerated reference docs.
   loaded for a sample/background run.
 - Dark subtraction is equivalent to subtracting dark count rate after time
   normalization, including uncertainty propagation.
-- Rear-diode centroids are stable against reasonable changes in centroid
+- Merged-pair centroids are stable against reasonable changes in centroid
   window and SNR threshold.
-- Full-scan transmission estimates from the two unsaturated low-gain diodes
-  agree within their reviewed uncertainty budget.
+- The assumption that the rear-diode amplifier changes by the same factor as
+  the front path is confirmed by the beamline scientist or replaced by an
+  explicit calibration.
+- Full-scan merged transmission remains stable under reviewed diode-response,
+  gain-overlap, and fine-grid perturbations.
 - Nearest and linear background remapping are tested on mismatched, descending,
   and partially overlapping coordinates without silent extrapolation.
 - Scale fits use only positive valid overlap data and remain stable under a
   reviewed fit-range perturbation.
 - Final Q values equal the weighted means of actual contributing Q values, and
   reported Q STD/SEM and contribution diagnostics match direct calculations.
-- The final curve has no unexplained steps at diode or gain handoffs.
+- Front/rear and low/high overlap residuals show no unexplained systematic
+  discontinuity; there is deliberately no hard handoff threshold.
 
 Resolution desmearing, sample-thickness normalization, and absolute-intensity
 calibration are deliberately later phases.
