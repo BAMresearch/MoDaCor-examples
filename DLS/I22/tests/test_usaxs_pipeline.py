@@ -16,16 +16,16 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
     pipeline = Pipeline.from_yaml_file(PIPELINE_PATH)
     spec = pipeline.to_spec()
 
-    assert len(spec["nodes"]) == 152
-    assert sum("origin" in node for node in spec["nodes"]) == 140
+    assert len(spec["nodes"]) == 192
+    assert sum("origin" in node for node in spec["nodes"]) == 180
     assert Counter(node["module"] for node in spec["nodes"]) == {
-        "AppendProcessingData": 28,
-        "CopyDataBundleKeys": 19,
-        "ThresholdMask": 13,
+        "AppendProcessingData": 36,
+        "CopyDataBundleKeys": 27,
+        "ThresholdMask": 21,
         "ApplyMask": 13,
         "Divide": 12,
         "IndexedAverager": 11,
-        "DivideDatabundles": 10,
+        "DivideDatabundles": 18,
         "ConcatenateDatabundles": 10,
         "MultiplyDatabundles": 10,
         "AngleToQ": 8,
@@ -34,7 +34,7 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
         "IndexByCoordinate": 3,
         "Integrate1D": 2,
         "SubtractInterpolated1D": 1,
-        "BitwiseOrMasks": 1,
+        "BitwiseOrMasks": 9,
         "Negate": 1,
     }
     assert "step_blocks" in pipeline.authored_spec
@@ -42,6 +42,27 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
 
     node_configs = {node["id"]: node["config"] for node in spec["nodes"]}
     assert node_configs["IP"]["bin_min"] == 0.002
+    expected_noise_multipliers = {
+        "SLF": 5,
+        "SLR": 7,
+        "SHF": 0,
+        "SHR": 7,
+        "BLF": 5,
+        "BLR": 7,
+        "BHF": 0,
+        "BHR": 7,
+    }
+    for readout, multiplier in expected_noise_multipliers.items():
+        copy_config = node_configs[f"prepare_diode.{readout}.copy_signal_to_dark_noise"]
+        divide_config = node_configs[f"prepare_diode.{readout}.calculate_signal_to_dark_noise"]
+        noise_config = node_configs[f"prepare_diode.{readout}.noise_mask"]
+        assert copy_config["with_processing_keys"] == [readout, readout]
+        assert copy_config["key_map"] == {"signal": "signal_to_dark_noise"}
+        assert divide_config["with_processing_keys"] == [readout, readout]
+        assert divide_config["dividend_data_key"] == "signal_to_dark_noise"
+        assert divide_config["divisor_data_key"] == "dark_noise_std"
+        assert noise_config["source_basedata_key"] == "signal_to_dark_noise"
+        assert noise_config["lower_bound"] == multiplier
     for acquisition in ("S", "B"):
         for gain in ("low", "high"):
             center_pool = node_configs[f"prepare_acquisition_center.{acquisition}.pool_{gain}"]

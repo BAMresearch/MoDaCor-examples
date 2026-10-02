@@ -4,11 +4,15 @@ description: >-
   preprocessed four-scan acquisition and the background source is scans
   977724--977727. Diode and I0 readouts are normalized to their exposure
   times explicitly. Transmission uses the full scan; the final scattering
-  curve uses the negative analyser wing. The high-gain front saturation
-  threshold is provisional and must be reviewed for new acquisitions.
+  curve uses the negative analyser wing. The dark-noise multipliers follow the
+  original I22 implementation; the high-gain front saturation threshold is
+  provisional and must be reviewed for new acquisitions.
 
 step_blocks:
   prepare_diode:
+    # The dark-noise lower cutoffs reproduce maskingNoiseMultiplier from
+    # supplementary/usaxs_diamond_code/usaxsPipeline.py: front low/high 5/False
+    # and rear low/high 7/7. A zero multiplier leaves positive high-front data.
     for_each:
       SLF:
         processing_key: SLF
@@ -17,6 +21,8 @@ step_blocks:
         uncertainties_sources:
           subread_sem: sample::/entry1/low_gain_front/subread_sem
           dark_offset_sem: sample::/entry1/low_gain_front/dark_offset_sem
+        dark_noise_location: sample::/entry1/low_gain_front/dark_noise_std
+        dark_noise_units_location: sample::/entry1/low_gain_front/dark_noise_std@units
         yaw_location: sample::/entry1/low_gain_front/yaw
         yaw_units_location: sample::/entry1/low_gain_front/yaw@units
         energy_location: sample::/entry1/low_gain_front/energy
@@ -24,6 +30,7 @@ step_blocks:
         count_time_location: sample::/entry1/low_gain_front/count_time
         count_time_units_location: sample::/entry1/low_gain_front/count_time@units
         upper_bound: null
+        noise_multiplier: 5
       SLR:
         processing_key: SLR
         signal_location: sample::/entry1/low_gain_rear/signal
@@ -31,6 +38,8 @@ step_blocks:
         uncertainties_sources:
           subread_sem: sample::/entry1/low_gain_rear/subread_sem
           dark_offset_sem: sample::/entry1/low_gain_rear/dark_offset_sem
+        dark_noise_location: sample::/entry1/low_gain_rear/dark_noise_std
+        dark_noise_units_location: sample::/entry1/low_gain_rear/dark_noise_std@units
         yaw_location: sample::/entry1/low_gain_rear/yaw
         yaw_units_location: sample::/entry1/low_gain_rear/yaw@units
         energy_location: sample::/entry1/low_gain_rear/energy
@@ -38,6 +47,7 @@ step_blocks:
         count_time_location: sample::/entry1/low_gain_rear/count_time
         count_time_units_location: sample::/entry1/low_gain_rear/count_time@units
         upper_bound: null
+        noise_multiplier: 7
       SHF:
         processing_key: SHF
         signal_location: sample::/entry1/high_gain_front/signal
@@ -45,6 +55,8 @@ step_blocks:
         uncertainties_sources:
           subread_sem: sample::/entry1/high_gain_front/subread_sem
           dark_offset_sem: sample::/entry1/high_gain_front/dark_offset_sem
+        dark_noise_location: sample::/entry1/high_gain_front/dark_noise_std
+        dark_noise_units_location: sample::/entry1/high_gain_front/dark_noise_std@units
         yaw_location: sample::/entry1/high_gain_front/yaw
         yaw_units_location: sample::/entry1/high_gain_front/yaw@units
         energy_location: sample::/entry1/high_gain_front/energy
@@ -52,6 +64,7 @@ step_blocks:
         count_time_location: sample::/entry1/high_gain_front/count_time
         count_time_units_location: sample::/entry1/high_gain_front/count_time@units
         upper_bound: 1.2e-7
+        noise_multiplier: 0
       SHR:
         processing_key: SHR
         signal_location: sample::/entry1/high_gain_rear/signal
@@ -59,6 +72,8 @@ step_blocks:
         uncertainties_sources:
           subread_sem: sample::/entry1/high_gain_rear/subread_sem
           dark_offset_sem: sample::/entry1/high_gain_rear/dark_offset_sem
+        dark_noise_location: sample::/entry1/high_gain_rear/dark_noise_std
+        dark_noise_units_location: sample::/entry1/high_gain_rear/dark_noise_std@units
         yaw_location: sample::/entry1/high_gain_rear/yaw
         yaw_units_location: sample::/entry1/high_gain_rear/yaw@units
         energy_location: sample::/entry1/high_gain_rear/energy
@@ -66,6 +81,7 @@ step_blocks:
         count_time_location: sample::/entry1/high_gain_rear/count_time
         count_time_units_location: sample::/entry1/high_gain_rear/count_time@units
         upper_bound: null
+        noise_multiplier: 7
       BLF:
         processing_key: BLF
         signal_location: background::/entry1/low_gain_front/signal
@@ -73,6 +89,8 @@ step_blocks:
         uncertainties_sources:
           subread_sem: background::/entry1/low_gain_front/subread_sem
           dark_offset_sem: background::/entry1/low_gain_front/dark_offset_sem
+        dark_noise_location: background::/entry1/low_gain_front/dark_noise_std
+        dark_noise_units_location: background::/entry1/low_gain_front/dark_noise_std@units
         yaw_location: background::/entry1/low_gain_front/yaw
         yaw_units_location: background::/entry1/low_gain_front/yaw@units
         energy_location: background::/entry1/low_gain_front/energy
@@ -80,6 +98,7 @@ step_blocks:
         count_time_location: background::/entry1/low_gain_front/count_time
         count_time_units_location: background::/entry1/low_gain_front/count_time@units
         upper_bound: null
+        noise_multiplier: 5
       BLR:
         processing_key: BLR
         signal_location: background::/entry1/low_gain_rear/signal
@@ -87,6 +106,8 @@ step_blocks:
         uncertainties_sources:
           subread_sem: background::/entry1/low_gain_rear/subread_sem
           dark_offset_sem: background::/entry1/low_gain_rear/dark_offset_sem
+        dark_noise_location: background::/entry1/low_gain_rear/dark_noise_std
+        dark_noise_units_location: background::/entry1/low_gain_rear/dark_noise_std@units
         yaw_location: background::/entry1/low_gain_rear/yaw
         yaw_units_location: background::/entry1/low_gain_rear/yaw@units
         energy_location: background::/entry1/low_gain_rear/energy
@@ -94,6 +115,7 @@ step_blocks:
         count_time_location: background::/entry1/low_gain_rear/count_time
         count_time_units_location: background::/entry1/low_gain_rear/count_time@units
         upper_bound: null
+        noise_multiplier: 7
       BHF:
         processing_key: BHF
         signal_location: background::/entry1/high_gain_front/signal
@@ -101,6 +123,8 @@ step_blocks:
         uncertainties_sources:
           subread_sem: background::/entry1/high_gain_front/subread_sem
           dark_offset_sem: background::/entry1/high_gain_front/dark_offset_sem
+        dark_noise_location: background::/entry1/high_gain_front/dark_noise_std
+        dark_noise_units_location: background::/entry1/high_gain_front/dark_noise_std@units
         yaw_location: background::/entry1/high_gain_front/yaw
         yaw_units_location: background::/entry1/high_gain_front/yaw@units
         energy_location: background::/entry1/high_gain_front/energy
@@ -108,6 +132,7 @@ step_blocks:
         count_time_location: background::/entry1/high_gain_front/count_time
         count_time_units_location: background::/entry1/high_gain_front/count_time@units
         upper_bound: 1.2e-7
+        noise_multiplier: 0
       BHR:
         processing_key: BHR
         signal_location: background::/entry1/high_gain_rear/signal
@@ -115,6 +140,8 @@ step_blocks:
         uncertainties_sources:
           subread_sem: background::/entry1/high_gain_rear/subread_sem
           dark_offset_sem: background::/entry1/high_gain_rear/dark_offset_sem
+        dark_noise_location: background::/entry1/high_gain_rear/dark_noise_std
+        dark_noise_units_location: background::/entry1/high_gain_rear/dark_noise_std@units
         yaw_location: background::/entry1/high_gain_rear/yaw
         yaw_units_location: background::/entry1/high_gain_rear/yaw@units
         energy_location: background::/entry1/high_gain_rear/energy
@@ -122,6 +149,7 @@ step_blocks:
         count_time_location: background::/entry1/high_gain_rear/count_time
         count_time_units_location: background::/entry1/high_gain_rear/count_time@units
         upper_bound: null
+        noise_multiplier: 7
     steps:
       load_signal:
         module: AppendProcessingData
@@ -132,9 +160,18 @@ step_blocks:
           units_location: "${signal_units_location}"
           rank_of_data: 1
           uncertainties_sources: "${uncertainties_sources}"
-      load_yaw:
+      load_dark_noise:
         module: AppendProcessingData
         requires_steps: [.load_signal]
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: dark_noise_std
+          signal_location: "${dark_noise_location}"
+          units_location: "${dark_noise_units_location}"
+          rank_of_data: 1
+      load_yaw:
+        module: AppendProcessingData
+        requires_steps: [.load_dark_noise]
         configuration:
           processing_key: "${processing_key}"
           databundle_output_key: yaw
@@ -150,7 +187,7 @@ step_blocks:
           signal_location: "${energy_location}"
           units_location: "${energy_units_location}"
           rank_of_data: 0
-      dynamic_mask:
+      range_mask:
         module: ThresholdMask
         requires_steps: [.load_energy]
         configuration:
@@ -160,9 +197,40 @@ step_blocks:
           lower_bound: 0
           upper_bound: "${upper_bound}"
           mask_mode: outside
+      copy_signal_to_dark_noise:
+        module: CopyDataBundleKeys
+        requires_steps: [.load_dark_noise]
+        configuration:
+          with_processing_keys: ["${processing_key}", "${processing_key}"]
+          key_map:
+            signal: signal_to_dark_noise
+          copy: true
+      calculate_signal_to_dark_noise:
+        module: DivideDatabundles
+        requires_steps: [.copy_signal_to_dark_noise]
+        configuration:
+          with_processing_keys: ["${processing_key}", "${processing_key}"]
+          dividend_data_key: signal_to_dark_noise
+          divisor_data_key: dark_noise_std
+      noise_mask:
+        module: ThresholdMask
+        requires_steps: [.calculate_signal_to_dark_noise]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          source_basedata_key: signal_to_dark_noise
+          target_mask_key: noise_mask
+          lower_bound: "${noise_multiplier}"
+          mask_mode: outside
+      combine_masks:
+        module: BitwiseOrMasks
+        requires_steps: [.range_mask, .noise_mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          target_mask_key: Mask
+          source_mask_keys: [noise_mask]
       apply_mask:
         module: ApplyMask
-        requires_steps: [.dynamic_mask]
+        requires_steps: [.combine_masks]
         configuration:
           with_processing_keys: ["${processing_key}"]
           mask_key: Mask

@@ -1,7 +1,7 @@
 # I22 USAXS processing design
 
 Status: initial implementation validated 2026-09-29; revision backlog agreed
-2026-09-30; priorities 0--5 implemented and validated 2026-10-02
+2026-09-30; priorities 0--6 implemented and validated 2026-10-02
 
 ## Purpose
 
@@ -54,10 +54,10 @@ matching final-curve scaling interval.
 
 Priority 3 is now implemented. `IndexByCoordinate` replaces `IndexPixels`, and
 `IndexedAverager` consumes only the resulting index map plus its independently
-configured value, optional measured axis, and optional mask. All three real
-sample acquisitions still produce 386 populated bins (IDs 0--385). Their final
-Q and intensity arrays are exactly equal to the preceding implementation, and
-their transmission factors remain unchanged.
+configured value, optional measured axis, and optional mask. At that revision
+stage all three real sample acquisitions still produced 386 populated bins
+(IDs 0--385), exactly matching the preceding implementation. The later
+dark-noise mask deliberately removes one sparsely populated top-Q bin.
 
 Priorities 4 and 5 are now implemented. Each simultaneous front/rear pair is
 response-scaled and averaged before centroid determination. The low-gain
@@ -65,15 +65,27 @@ rear/front response factor is then refitted near the centred direct beam and
 applied to both gains. The resulting low- and high-gain pair curves are fitted,
 pooled without a hard handoff, and averaged onto a shared fine signed-Q grid.
 Transmission and background subtraction operate on those merged acquisition
-curves. The expanded DAG has 152 ordinary steps; mapped blocks keep the
+curves. The expanded DAG has 192 ordinary steps; mapped blocks keep the
 sample/background and gain lanes visible in the authored YAML and graph.
 
 Across the three example samples, the low-gain rear/front response factor is
 `29.760`--`29.813`, compared with `29.851` for the reused background. The
-sample high-to-low factor is `0.9807`--`1.0067`, while the background factor is
-`1.0324`. The merged full-scan transmission values are `0.58133`, `0.58290`,
-and `0.58467`. All runs produce 386 populated final bins with first mean Q near
+sample high-to-low factor is `0.9807`--`1.0066`, while the background factor is
+`1.0344`. The merged full-scan transmission values are `0.58102`, `0.58290`,
+and `0.58459`. All runs produce 385 populated final bins with first mean Q near
 `2.008e-3 1/nm`.
+
+Priority 6 exposed and corrected a missing dynamic-range condition. Positive
+rear-diode tails below the measured dark-noise floor had remained eligible for
+pair averaging. The preprocessor now retains the dark-rate standard deviation
+as a separate operating array. Explicit `CopyDataBundleKeys` and
+`DivideDatabundles` steps preserve and divide a copy of the signal to create a
+dimensionless `signal_to_dark_noise` diagnostic; `ThresholdMask` then only
+compares that ratio with the configured bound. The example uses the original
+I22 dark-noise multipliers: 5 for low-gain front, 7 for both rear scans, and no
+lower noise cutoff for high-gain front. This leaves roughly 450 rear-diode
+points around each direct beam while the front diode supplies the wings. The
+upper high-gain-front saturation threshold remains provisional.
 
 ### 1. Eight diode readouts, not twelve scientific inputs
 
@@ -161,8 +173,8 @@ final binning and any final-curve scaling interval whose lower boundary is
 intended to match the usable Q range. Full signed scans remain available for
 centering, scaling studies, transmission, and wing diagnostics.
 
-All three example acquisitions execute the current 152-step pipeline with this
-limit. Their final curves contain 386 points, with the first mean bin Q at about
+All three example acquisitions execute the current 192-step pipeline with this
+limit. Their final curves contain 385 points, with the first mean bin Q at about
 `2.008e-3 1/nm`.
 
 ### 5. Transmission from the merged four-series measurement
@@ -207,7 +219,7 @@ arbitrary handoff discontinuity.
 
 Both fit levels retain the fitted scalar, its named uncertainty component,
 point count, actual fit range, and reduced chi-square. Reduced chi-square is
-`1.93`--`3.80` for the sample diode fits and `5.93`--`12.20` for the sample gain
+`1.93`--`3.80` for the sample diode fits and `5.97`--`12.20` for the sample gain
 fits. These values warn that the selected `subread_sem` does not fully explain
 the pointwise curve mismatch; the formal factor uncertainty is therefore not
 silently enlarged or presented as a goodness-of-fit substitute.
@@ -229,6 +241,25 @@ Q, and detector/gain handoff regions. A persistent offset, long same-sign run,
 or Q-dependent trend is evidence of systematic background, transmission, or
 scale mismatch; isolated values of order one propagated standard uncertainty
 are not a correction failure.
+
+All three packaged samples currently have zero negative final bins after the
+dark-noise mask correction. That observation is descriptive, not evidence that
+the high-Q signal should equal zero: the corrected sample curves remain
+strongly positive and may contain real scattering. The notebook therefore
+does not calculate a generic final-signal z-score against zero. It instead
+plots standardized low/high differences over their actual scaling interval,
+where agreement is expected, using the explicitly selected `subread_sem`
+component. It also reports negative-bin counts and longest contiguous negative
+runs should later datasets contain them.
+
+The standardized overlap diagnostics and reduced chi-square values show no
+hard handoff—none exists—but do show more scatter than `subread_sem` alone
+predicts. Over the gain-fit interval the standardized sample differences have
+means between `-0.04` and `-0.13`, but standard deviations of `2.45`--`3.50`;
+the reused background has mean `-0.22` and standard deviation `1.82`. Thus the
+fitted levels are not systematically displaced, while the selected pointwise
+uncertainty component is too narrow. This remains a calibration/uncertainty-
+model diagnostic rather than a reason to switch curves at a threshold.
 
 ### 7 and 9. Generic repeated-step expansion and loading
 
@@ -367,6 +398,8 @@ For every readout the file stores:
 
 - integrated, exposure-adjusted dark-subtracted signal;
 - subread SEM and dark-offset SEM as separate uncertainty components;
+- exposure-adjusted dark-rate standard deviation as a separate masking
+  operating array, not as an automatically propagated signal uncertainty;
 - analyser yaw;
 - I0 mean and SEM;
 - scan count time;
@@ -378,9 +411,15 @@ signal is
 
 ```text
 adjusted = scan - mean(dark / t_dark) * t_scan
+dark_noise_std = std(dark / t_dark) * t_scan
 ```
 
-The pipeline later divides by `t_scan`. No I0 dark subtraction is applied:
+`dark_noise_std` supplies the divisor for the retained dimensionless
+`signal_to_dark_noise` diagnostic. A separate `ThresholdMask` compares that
+ratio with the dynamic-range threshold; the mask step performs no
+normalization. The dark-noise array is not attached as a propagated
+uncertainty component. The pipeline later divides valid signal points by
+`t_scan`. No I0 dark subtraction is applied:
 the acquisitions do not provide a clean I0-dark measurement. Non-positive I0
 samples are dynamically masked before division as invalid readouts; this is a
 validity check, not a dark correction.
@@ -393,7 +432,7 @@ This avoids assuming a symmetric or structureless analyser rocking curve.
 For each physical low- or high-gain scan:
 
 1. Create axis-independent validity masks for non-finite data, invalid I0,
-   diode saturation, and configured signal-to-uncertainty limits.
+   diode saturation, and configured signal-to-dark-noise limits.
 2. Normalize to count time and I0.
 3. Scale and uncertainty-average the aligned front/rear pair as described
    above.

@@ -75,11 +75,17 @@ def test_preprocess_usaxs_acquisition_produces_four_dark_adjusted_curves(tmp_pat
         # Low-front dark rates are [4, 8, 12] count/s, with mean 8.
         np.testing.assert_allclose(h5["/entry1/low_gain_front/signal"], 20.0 - 8.0 * 0.25)
         np.testing.assert_allclose(h5["/entry1/low_gain_front/dark_rate"], 8.0)
+        expected_dark_rate_std = np.std([4.0, 8.0, 12.0], ddof=1)
         expected_dark_rate_sem = np.std([4.0, 8.0, 12.0], ddof=1) / np.sqrt(3)
         np.testing.assert_allclose(
             h5["/entry1/low_gain_front/dark_offset_sem"],
             expected_dark_rate_sem * 0.25,
         )
+        np.testing.assert_allclose(
+            h5["/entry1/low_gain_front/dark_noise_std"],
+            expected_dark_rate_std * 0.25,
+        )
+        np.testing.assert_allclose(h5["/entry1/low_gain_front/dark_rate_std"], expected_dark_rate_std)
         expected_subread_sem = np.std([-1.5, -0.5, 0.5, 1.5], ddof=1) / 2.0
         np.testing.assert_allclose(
             h5["/entry1/low_gain_front/subread_sem"], expected_subread_sem

@@ -11,7 +11,7 @@ import h5py
 import numpy as np
 from attrs import define, field
 
-PREPROCESSING_VERSION = "2026-09-29-i22-usaxs-v1"
+PREPROCESSING_VERSION = "2026-10-02-i22-usaxs-v2"
 FRONT_DIODE_CHANNEL = 3
 REAR_DIODE_CHANNEL = 3
 I0_CHANNEL = 6
@@ -47,6 +47,7 @@ class ReducedReadout:
 @define(frozen=True, slots=True)
 class DarkRate:
     mean: float
+    std: float
     sem: float
     exposure_count: int
     subreads_per_exposure: int
@@ -116,9 +117,11 @@ def _read_dark_rate(source: h5py.File, data_path: str, count_time_path: str, cha
     rates = rates[np.isfinite(rates)]
     if rates.size < 2:
         raise ValueError(f"Dark readout at {data_path} needs at least two finite exposures.")
+    standard_deviation = float(np.std(rates, ddof=1))
     return DarkRate(
         mean=float(np.mean(rates)),
-        sem=float(np.std(rates, ddof=1) / np.sqrt(rates.size)),
+        std=standard_deviation,
+        sem=standard_deviation / np.sqrt(rates.size),
         exposure_count=int(rates.size),
         subreads_per_exposure=subreads,
     )
@@ -191,9 +194,11 @@ def _write_curve(
     )
     adjusted = scan.signal - dark.mean * scan.count_time
     dark_offset_sem = np.abs(scan.count_time) * dark.sem
+    dark_noise_std = np.abs(scan.count_time) * dark.std
     _write_dataset(group, "signal", adjusted, "count", long_name="Exposure-adjusted dark-subtracted diode")
     _write_dataset(group, "subread_sem", scan.subread_sem, "count")
     _write_dataset(group, "dark_offset_sem", dark_offset_sem, "count")
+    _write_dataset(group, "dark_noise_std", dark_noise_std, "count")
     yaw_dataset = _write_dataset(group, "yaw", yaw, "microradian")
     yaw_dataset.attrs["indices"] = 0
     _write_dataset(group, "count_time", scan.count_time, "s")
@@ -202,6 +207,7 @@ def _write_curve(
     _write_dataset(group, "i0_subread_sem", i0.subread_sem, "count")
     _write_dataset(group, "i0_count_time", i0.count_time, "s")
     _write_dataset(group, "dark_rate", np.asarray(dark.mean), "count/s")
+    _write_dataset(group, "dark_rate_std", np.asarray(dark.std), "count/s")
     _write_dataset(group, "dark_rate_sem", np.asarray(dark.sem), "count/s")
     group.attrs["dark_exposure_count"] = dark.exposure_count
     group.attrs["dark_subreads_per_exposure"] = dark.subreads_per_exposure
