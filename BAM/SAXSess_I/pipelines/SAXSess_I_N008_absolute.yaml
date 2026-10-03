@@ -160,9 +160,9 @@ steps:
         propagate_to_all: sample::/entry/sample/transformations/sample_z_uncertainty
 
       # wavelength (scalar length)
-      wavelength_source: sample::/entry/sample/beam/incident_wavelength
-      wavelength_units_source: sample::/entry/sample/beam/incident_wavelength@units
-      wavelength_uncertainties_sources:
+      photon_source: sample::/entry/sample/beam/incident_wavelength
+      photon_units_source: sample::/entry/sample/beam/incident_wavelength@units
+      photon_uncertainties_sources:
         propagate_to_all: sample::/entry/sample/beam/incident_wavelength_uncertainty
       # pixel pitch (length) for Omega
       pixel_pitch_fast_source: "sample::/entry/instrument/detector/x_pixel_size"
@@ -224,9 +224,9 @@ steps:
         propagate_to_all: intensity_calibration::/entry/sample/transformations/sample_z_uncertainty
 
       # wavelength (scalar length)
-      wavelength_source: intensity_calibration::/entry/sample/beam/incident_wavelength
-      wavelength_units_source: intensity_calibration::/entry/sample/beam/incident_wavelength@units
-      wavelength_uncertainties_sources:
+      photon_source: intensity_calibration::/entry/sample/beam/incident_wavelength
+      photon_units_source: intensity_calibration::/entry/sample/beam/incident_wavelength@units
+      photon_uncertainties_sources:
         propagate_to_all: intensity_calibration::/entry/sample/beam/incident_wavelength_uncertainty
       # pixel pitch (length) for Omega
       pixel_pitch_fast_source: "intensity_calibration::/entry/instrument/detector/x_pixel_size"

@@ -393,9 +393,9 @@ steps:
       sample_z_units_source: sample::/entry1/sample/transformations/sample_x@units
 
       # wavelength (scalar length)
-      wavelength_source: sample::/entry1/sample/beam/incident_wavelength
-      wavelength_units_source: sample::/entry1/sample/beam/incident_wavelength@units
-      wavelength_uncertainties_sources:
+      photon_source: sample::/entry1/sample/beam/incident_wavelength
+      photon_units_source: sample::/entry1/sample/beam/incident_wavelength@units
+      photon_uncertainties_sources:
         wavelength_error: sample::/entry1/sample/beam/wavelength_error
 
       # pixel pitch (length / pixel) for Omega

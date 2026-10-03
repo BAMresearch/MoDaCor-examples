@@ -16,10 +16,10 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
     pipeline = Pipeline.from_yaml_file(PIPELINE_PATH)
     spec = pipeline.to_spec()
 
-    assert len(spec["nodes"]) == 192
-    assert sum("origin" in node for node in spec["nodes"]) == 180
+    assert len(spec["nodes"]) == 184
+    assert sum("origin" in node for node in spec["nodes"]) == 172
     assert Counter(node["module"] for node in spec["nodes"]) == {
-        "AppendProcessingData": 36,
+        "AppendProcessingData": 28,
         "CopyDataBundleKeys": 27,
         "ThresholdMask": 21,
         "ApplyMask": 13,
@@ -87,6 +87,9 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
 
     assert node_configs["scale_gain.S.fit"]["with_processing_keys"] == ["SH", "SL"]
     assert node_configs["scale_gain.B.fit"]["with_processing_keys"] == ["BH", "BL"]
+    assert node_configs["convert_q.SLF.q"]["photon_source"] == "sample::/entry1/low_gain_front/energy"
+    assert node_configs["convert_q.BHR.q"]["photon_source"] == "background::/entry1/high_gain_rear/energy"
+    assert "incident_key" not in node_configs["convert_q.SLF.q"]
     for item in ("sample", "background"):
         pool_config = node_configs[f"merge_acquisition.{item}.pool"]
         assert pool_config["uncertainty_key_policy"] == "fill_zero"

@@ -104,8 +104,8 @@ steps:
       sample_z_override:
         value: 0.0
         units: mm
-      wavelength_source: waxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
-      wavelength_units_source: waxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
+      photon_source: waxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
+      photon_units_source: waxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
 
   IP_static:
     module: IndexByCoordinate

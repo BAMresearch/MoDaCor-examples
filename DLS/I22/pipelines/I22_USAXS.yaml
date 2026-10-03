@@ -25,8 +25,6 @@ step_blocks:
         dark_noise_units_location: sample::/entry1/low_gain_front/dark_noise_std@units
         yaw_location: sample::/entry1/low_gain_front/yaw
         yaw_units_location: sample::/entry1/low_gain_front/yaw@units
-        energy_location: sample::/entry1/low_gain_front/energy
-        energy_units_location: sample::/entry1/low_gain_front/energy@units
         count_time_location: sample::/entry1/low_gain_front/count_time
         count_time_units_location: sample::/entry1/low_gain_front/count_time@units
         upper_bound: null
@@ -42,8 +40,6 @@ step_blocks:
         dark_noise_units_location: sample::/entry1/low_gain_rear/dark_noise_std@units
         yaw_location: sample::/entry1/low_gain_rear/yaw
         yaw_units_location: sample::/entry1/low_gain_rear/yaw@units
-        energy_location: sample::/entry1/low_gain_rear/energy
-        energy_units_location: sample::/entry1/low_gain_rear/energy@units
         count_time_location: sample::/entry1/low_gain_rear/count_time
         count_time_units_location: sample::/entry1/low_gain_rear/count_time@units
         upper_bound: null
@@ -59,8 +55,6 @@ step_blocks:
         dark_noise_units_location: sample::/entry1/high_gain_front/dark_noise_std@units
         yaw_location: sample::/entry1/high_gain_front/yaw
         yaw_units_location: sample::/entry1/high_gain_front/yaw@units
-        energy_location: sample::/entry1/high_gain_front/energy
-        energy_units_location: sample::/entry1/high_gain_front/energy@units
         count_time_location: sample::/entry1/high_gain_front/count_time
         count_time_units_location: sample::/entry1/high_gain_front/count_time@units
         upper_bound: 1.2e-7
@@ -76,8 +70,6 @@ step_blocks:
         dark_noise_units_location: sample::/entry1/high_gain_rear/dark_noise_std@units
         yaw_location: sample::/entry1/high_gain_rear/yaw
         yaw_units_location: sample::/entry1/high_gain_rear/yaw@units
-        energy_location: sample::/entry1/high_gain_rear/energy
-        energy_units_location: sample::/entry1/high_gain_rear/energy@units
         count_time_location: sample::/entry1/high_gain_rear/count_time
         count_time_units_location: sample::/entry1/high_gain_rear/count_time@units
         upper_bound: null
@@ -93,8 +85,6 @@ step_blocks:
         dark_noise_units_location: background::/entry1/low_gain_front/dark_noise_std@units
         yaw_location: background::/entry1/low_gain_front/yaw
         yaw_units_location: background::/entry1/low_gain_front/yaw@units
-        energy_location: background::/entry1/low_gain_front/energy
-        energy_units_location: background::/entry1/low_gain_front/energy@units
         count_time_location: background::/entry1/low_gain_front/count_time
         count_time_units_location: background::/entry1/low_gain_front/count_time@units
         upper_bound: null
@@ -110,8 +100,6 @@ step_blocks:
         dark_noise_units_location: background::/entry1/low_gain_rear/dark_noise_std@units
         yaw_location: background::/entry1/low_gain_rear/yaw
         yaw_units_location: background::/entry1/low_gain_rear/yaw@units
-        energy_location: background::/entry1/low_gain_rear/energy
-        energy_units_location: background::/entry1/low_gain_rear/energy@units
         count_time_location: background::/entry1/low_gain_rear/count_time
         count_time_units_location: background::/entry1/low_gain_rear/count_time@units
         upper_bound: null
@@ -127,8 +115,6 @@ step_blocks:
         dark_noise_units_location: background::/entry1/high_gain_front/dark_noise_std@units
         yaw_location: background::/entry1/high_gain_front/yaw
         yaw_units_location: background::/entry1/high_gain_front/yaw@units
-        energy_location: background::/entry1/high_gain_front/energy
-        energy_units_location: background::/entry1/high_gain_front/energy@units
         count_time_location: background::/entry1/high_gain_front/count_time
         count_time_units_location: background::/entry1/high_gain_front/count_time@units
         upper_bound: 1.2e-7
@@ -144,8 +130,6 @@ step_blocks:
         dark_noise_units_location: background::/entry1/high_gain_rear/dark_noise_std@units
         yaw_location: background::/entry1/high_gain_rear/yaw
         yaw_units_location: background::/entry1/high_gain_rear/yaw@units
-        energy_location: background::/entry1/high_gain_rear/energy
-        energy_units_location: background::/entry1/high_gain_rear/energy@units
         count_time_location: background::/entry1/high_gain_rear/count_time
         count_time_units_location: background::/entry1/high_gain_rear/count_time@units
         upper_bound: null
@@ -178,18 +162,9 @@ step_blocks:
           signal_location: "${yaw_location}"
           units_location: "${yaw_units_location}"
           rank_of_data: 1
-      load_energy:
-        module: AppendProcessingData
-        requires_steps: [.load_yaw]
-        configuration:
-          processing_key: "${processing_key}"
-          databundle_output_key: energy
-          signal_location: "${energy_location}"
-          units_location: "${energy_units_location}"
-          rank_of_data: 0
       range_mask:
         module: ThresholdMask
-        requires_steps: [.load_energy]
+        requires_steps: [.load_yaw]
         configuration:
           with_processing_keys: ["${processing_key}"]
           source_basedata_key: signal
@@ -511,14 +486,46 @@ step_blocks:
 
   convert_q:
     for_each:
-      SLF: {processing_key: SLF, requires: [copy_center.SLF.copy]}
-      SLR: {processing_key: SLR, requires: [copy_center.SLR.copy]}
-      SHF: {processing_key: SHF, requires: [copy_center.SHF.copy]}
-      SHR: {processing_key: SHR, requires: [copy_center.SHR.copy]}
-      BLF: {processing_key: BLF, requires: [copy_center.BLF.copy]}
-      BLR: {processing_key: BLR, requires: [copy_center.BLR.copy]}
-      BHF: {processing_key: BHF, requires: [copy_center.BHF.copy]}
-      BHR: {processing_key: BHR, requires: [copy_center.BHR.copy]}
+      SLF:
+        processing_key: SLF
+        photon_source: sample::/entry1/low_gain_front/energy
+        photon_units_source: sample::/entry1/low_gain_front/energy@units
+        requires: [copy_center.SLF.copy]
+      SLR:
+        processing_key: SLR
+        photon_source: sample::/entry1/low_gain_rear/energy
+        photon_units_source: sample::/entry1/low_gain_rear/energy@units
+        requires: [copy_center.SLR.copy]
+      SHF:
+        processing_key: SHF
+        photon_source: sample::/entry1/high_gain_front/energy
+        photon_units_source: sample::/entry1/high_gain_front/energy@units
+        requires: [copy_center.SHF.copy]
+      SHR:
+        processing_key: SHR
+        photon_source: sample::/entry1/high_gain_rear/energy
+        photon_units_source: sample::/entry1/high_gain_rear/energy@units
+        requires: [copy_center.SHR.copy]
+      BLF:
+        processing_key: BLF
+        photon_source: background::/entry1/low_gain_front/energy
+        photon_units_source: background::/entry1/low_gain_front/energy@units
+        requires: [copy_center.BLF.copy]
+      BLR:
+        processing_key: BLR
+        photon_source: background::/entry1/low_gain_rear/energy
+        photon_units_source: background::/entry1/low_gain_rear/energy@units
+        requires: [copy_center.BLR.copy]
+      BHF:
+        processing_key: BHF
+        photon_source: background::/entry1/high_gain_front/energy
+        photon_units_source: background::/entry1/high_gain_front/energy@units
+        requires: [copy_center.BHF.copy]
+      BHR:
+        processing_key: BHR
+        photon_source: background::/entry1/high_gain_rear/energy
+        photon_units_source: background::/entry1/high_gain_rear/energy@units
+        requires: [copy_center.BHR.copy]
     steps:
       q:
         module: AngleToQ
@@ -526,8 +533,8 @@ step_blocks:
         configuration:
           with_processing_keys: ["${processing_key}"]
           angle_key: yaw
-          incident_key: energy
-          incident_quantity: energy
+          photon_source: "${photon_source}"
+          photon_units_source: "${photon_units_source}"
           angle_convention: scattering_angle
           center_key: beam_center
           output_key: Q

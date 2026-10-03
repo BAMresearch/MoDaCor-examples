@@ -1,7 +1,7 @@
 # I22 USAXS processing design
 
 Status: initial implementation validated 2026-09-29; revision backlog agreed
-2026-09-30; priorities 0--6 implemented and validated 2026-10-02
+2026-09-30; priorities 0--7 implemented and validated 2026-10-03
 
 ## Purpose
 
@@ -65,7 +65,7 @@ rear/front response factor is then refitted near the centred direct beam and
 applied to both gains. The resulting low- and high-gain pair curves are fitted,
 pooled without a hard handoff, and averaged onto a shared fine signed-Q grid.
 Transmission and background subtraction operate on those merged acquisition
-curves. The expanded DAG has 192 ordinary steps; mapped blocks keep the
+curves. The expanded DAG has 184 ordinary steps; mapped blocks keep the
 sample/background and gain lanes visible in the authored YAML and graph.
 
 Across the three example samples, the low-gain rear/front response factor is
@@ -86,6 +86,15 @@ I22 dark-noise multipliers: 5 for low-gain front, 7 for both rear scans, and no
 lower noise cutoff for high-gain front. This leaves roughly 450 rear-diode
 points around each direct beam while the front diode supplies the wings. The
 upper high-gain-front saturation threshold remains provisional.
+
+Priority 7 is now implemented. `AngleToQ` and
+`XSGeometryFromPixelCoordinates` share the same `photon_source`,
+`photon_units_source`, and `photon_uncertainties_sources` interface. A shared
+`BaseData` helper infers photon energy versus wavelength from Pint
+dimensionality and produces wavelength with propagated uncertainties. Because
+the photon description is acquisition metadata rather than a dynamically
+derived pipeline value, `AngleToQ` reads it directly from its `IoSource`; the
+USAXS graph therefore no longer needs eight energy-loading steps.
 
 ### 1. Eight diode readouts, not twelve scientific inputs
 
@@ -111,13 +120,15 @@ convention:
 - `bragg_angle` or `theta` uses
   `Q = 4*pi/lambda * sin(angle)`.
 
-The step retains an optional zero/centre, measured photon energy or wavelength,
-signed output, units, axes, and BaseData uncertainty propagation. The current
-USAXS yaw is treated as a signed scattering-angle displacement. No `YawToQ`
-compatibility alias is retained because the earlier step had no external
-consumer. Reusable `BaseData` helpers convert photon energy and wavelength in
-both directions through `h*c`, preserving units, named uncertainty components,
-axes, rank, and weights. The material-attenuation path uses the same helper.
+The step retains an optional zero/centre, signed output, units, axes, and
+BaseData uncertainty propagation. It loads photon energy or wavelength through
+the shared `photon_*` IoSource interface and infers the representation from its
+units. The current USAXS yaw is treated as a signed scattering-angle
+displacement. No `YawToQ` compatibility alias is retained because the earlier
+step had no external consumer. Reusable `BaseData` helpers convert photon
+energy and wavelength through `h*c`, preserving units, named uncertainty
+components, axes, rank, and weights. The material-attenuation path uses the
+same conversion helper.
 
 ### 3. General BaseData indexing
 
@@ -173,7 +184,7 @@ final binning and any final-curve scaling interval whose lower boundary is
 intended to match the usable Q range. Full signed scans remain available for
 centering, scaling studies, transmission, and wing diagnostics.
 
-All three example acquisitions execute the current 192-step pipeline with this
+All three example acquisitions execute the current 184-step pipeline with this
 limit. Their final curves contain 385 points, with the first mean bin Q at about
 `2.008e-3 1/nm`.
 
@@ -576,9 +587,9 @@ curves; strict monotonicity remains the module default.
   `IndexPixels`.
 - Add bin-count, summed-weight, positive-weight-count, and effective-count
   diagnostics to `IndexedAverager`.
-- After the prioritized USAXS corrections, extend
-  `XSGeometryFromPixelCoordinates` to accept photon energy or wavelength using
-  the shared uncertainty-aware `BaseData` conversion helper.
+- Let `AngleToQ` and `XSGeometryFromPixelCoordinates` accept photon energy or
+  wavelength through one source interface and the shared uncertainty-aware
+  `BaseData` conversion helper.
 
 Every public step requires focused model/module tests, exact dependency-contract
 assertions, export through `modacor.modules`, and regenerated reference docs.
