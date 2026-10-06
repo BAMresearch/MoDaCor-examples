@@ -39,7 +39,7 @@ MoDaCor kernel, and choose one focused notebook:
 - `I22_USAXS_server.ipynb` preprocesses the four-scan USAXS acquisitions and
   runs the signed-Q correction, transmission, background-remapping, diode
   scaling, and indexed averaging pipeline. Its compact `step_blocks` document
-  expands to 123 independently traceable execution steps. See
+  expands to 184 independently traceable execution steps. See
   `USAXS_PROCESSING_DESIGN.md` for the processing contract and provisional
   settings.
 - `I22_solids_server.ipynb` performs ordinary non-chunked batch processing.
@@ -80,11 +80,16 @@ of the integrating count-time correction.
 
 ## Current validation status
 
-Using MoDaCor 1.8.0, all packaged pipelines prepare successfully. The shared helper
-discovers exactly four packaged samples, validates matching `(1679, 1475)`
-calibration/mask shapes, and preprocesses the samples/background with working
-relative HDF5 links. Complete SAXS and WAXS pipeline equivalence and the full
-server processing loop remain release-freeze validation tasks.
+The SAXS/WAXS results below were originally validated with MoDaCor 1.8.0.
+Their pipeline files have since been migrated to the current development
+baseline documented in the repository root. All packaged I22 pipelines prepare
+with that baseline. The shared helper discovers exactly four packaged samples,
+validates matching `(1679, 1475)` calibration/mask shapes, and preprocesses the
+samples/background with working relative HDF5 links. The USAXS tests validate
+the compact 184-step graph and preprocessing, and all four packaged USAXS
+acquisitions preprocess successfully. Complete SAXS and WAXS pipeline
+equivalence and the full server processing loop remain release-freeze
+validation tasks.
 
 The BufferSource notebook is configured for all four
 measurements and ten ten-frame chunks per measurement. It derives independent

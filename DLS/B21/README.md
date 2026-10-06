@@ -164,10 +164,13 @@ which is ignored by Git.
 
 ## Current validation status
 
-Using MoDaCor 1.8.0, the clean notebook discovers all eight expected
-measurements, validates the `(1, 21, 2167, 2070)` `uint32` detector stacks,
-constructs 40 five-frame-or-smaller work items, and successfully starts and
-stops its local runtime. The eleven-step first pass combines the supplied
+The recorded clean-notebook validation used MoDaCor 1.8.0 and discovered all
+eight expected measurements, validated the `(1, 21, 2167, 2070)` `uint32`
+detector stacks, constructed 40 five-frame-or-smaller work items, and
+successfully started and stopped its local runtime. The generic indexing part
+of the pipeline has since been migrated to the current development baseline;
+the complete B21 run has not yet been repeated after that migration. The
+eleven-step first pass combines the supplied
 instrument mask with a frame-wise threshold mask for negative and max-pegged
 Eiger values. Five selected runs have completed all 25 server-side detector
 chunks and produced `(1, 21, 50)` coarse curves and Q coordinates. The compact

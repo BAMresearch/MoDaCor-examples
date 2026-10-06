@@ -44,13 +44,16 @@ implementation where they differ.
 Priority 1 is now implemented: schema-level `for_each` step-block expansion.
 The detailed design and implementation record is in the MoDaCor core note
 [`pipeline-foreach-expansion.md`](https://github.com/BAMResearch/MoDaCor/blob/main/docs/development/design/pipeline-foreach-expansion.md).
-The compact pipeline is 504 rather than 1,255 lines and expands to the same
-123 ordinary steps. It reproduces the prior pooled signal, pooled Q, and
-transmission scalar exactly for sample scans 978497--978500 against background
-scans 977724--977727. The subsequent `AngleToQ` migration reproduced those
-values within floating-point roundoff before the independently agreed Q-range
-change. The pipeline now uses `q_min = 2e-3 1/nm` for final binning and the
-matching final-curve scaling interval.
+The initial schema migration reduced the then-current pipeline from 1,255 to
+504 lines while preserving its 123 ordinary steps. The correction chain has
+since grown deliberately; the current compact pipeline is 894 lines and
+expands to 184 ordinary steps. The initial migration reproduced the prior
+pooled signal, pooled Q, and transmission scalar exactly for sample scans
+978497--978500 against background scans 977724--977727. The subsequent
+`AngleToQ` migration reproduced those values within floating-point roundoff
+before the independently agreed Q-range change. The pipeline now uses
+`q_min = 2e-3 1/nm` for final binning and the matching final-curve scaling
+interval.
 
 Priority 3 is now implemented. `IndexByCoordinate` replaces `IndexPixels`, and
 `IndexedAverager` consumes only the resulting index map plus its independently

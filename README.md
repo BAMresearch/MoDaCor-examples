@@ -54,9 +54,13 @@ license. See [LICENSING.md](LICENSING.md) for precedence and declaration rules.
 
 ## Development environment
 
-The current development baseline is MoDaCor 1.8.0. The final Zenodo release
-will record an immutable MoDaCor tag or commit after every included example has
-been rerun against it. MoDaCor requires Python 3.12 or newer.
+The current development baseline is the MoDaCor `USAXS-retry` implementation at
+commit `c78fd81c` or later. It includes the breaking migration from
+`IndexPixels` to `IndexByCoordinate`, the generic `IndexedAverager` interface,
+and the shared `photon_*` geometry metadata interface. The final Zenodo release
+will replace this development pin with an immutable MoDaCor release tag after
+every included example has been rerun against it. MoDaCor requires Python 3.12
+or newer.
 
 Create the environment in this examples repository and install the MoDaCor
 revision that the examples should exercise. Python 3.14 is used for current

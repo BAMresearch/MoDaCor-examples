@@ -58,9 +58,10 @@ BAM/SAXSess_I` from the repository root. Before the first Zenodo release,
 contributors must obtain the development payload directly from the
 maintainers.
 
-Use MoDaCor 1.8.0 with the `server` extra, plus pandas, openpyxl, Pillow,
-PyYAML, h5py, and matplotlib. Start Jupyter from the repository root or this
-directory and run `SAXSess_I_N008_absolute.ipynb` from top to bottom.
+Use the current MoDaCor development baseline documented in the repository root
+with the `server` extra, plus pandas, openpyxl, Pillow, PyYAML, h5py, and
+matplotlib. Start Jupyter from the repository root or this directory and run
+`SAXSess_I_N008_absolute.ipynb` from top to bottom.
 
 The notebook launches a loopback-only MoDaCor runtime by default. To use an
 existing runtime, set `RUNTIME_URL` in the configuration cell. If that runtime
@@ -75,10 +76,14 @@ unchanged water/background/calibration branches.
 
 ## Current validation and release gates
 
-With MoDaCor 1.8.0, the 53-step pipeline prepares and the complete six-aliquot
-batch succeeds. Every output contains 98 finite q/intensity pairs over
-approximately `0.103–5.88 nm^-1`, in absolute units of `1/(m sr)`. The first
-run is full and all five later runs use partial invalidation as intended.
+The complete six-aliquot validation used MoDaCor 1.8.0 and the then-current
+53-step pipeline. The pipeline has since been migrated to the breaking generic
+indexing and averaging interfaces; its current 55-step form prepares with the
+development baseline, but the complete batch has not yet been rerun after that
+migration. In the recorded run every output contained 98 finite q/intensity
+pairs over approximately `0.103–5.88 nm^-1`, in absolute units of `1/(m sr)`.
+The first run was full and all five later runs used partial invalidation as
+intended.
 
 The instrument constants in `config/SAXSess_I.yaml` were carried over from the
 supplied legacy notebook/static YAML and remain provisional until checked
