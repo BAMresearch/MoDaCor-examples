@@ -117,8 +117,9 @@ steps. This ordering keeps the non-integrating transmission and flux readouts
 downstream of the integrating count-time correction. SAXS and WAXS remain separate,
 visually continuous lanes through Poisson uncertainty generation, transmission,
 incident-flux normalization, frame averaging, silicon-detector efficiency,
-polarization, and specimen-thickness normalization. They use the same metadata
-and correction parameters without repeatedly merging and splitting the graph.
+polarization, and 2D specimen-thickness normalization before azimuthal
+integration. They use the same metadata and correction parameters without
+repeatedly merging and splitting the graph.
 Geometry, masks, background subtraction, and azimuthal integration remain
 detector-specific. After applying the shared absolute scale, the two corrected
 curves are concatenated and Q-sorted into one `saxs_waxs_1d` dataset and one
@@ -127,10 +128,11 @@ masters do not contain a
 usable thickness value, so preprocessing records 50 µm from their acquisition
 titles.
 
-Measurement 966700 follows the complete SAXS sample path. Its averaged curve
-is divided by its independently known 1.0 mm thickness before a lognormal,
-uncertainty-weighted `FindScaleFactor1D` fit to the supplied reference over
-`0.12–2.0 nm⁻¹`. This conservative range avoids relying on the high-Q tail of
+Measurement 966700 follows the complete SAXS sample path. Its corrected 2D
+image is divided by its independently known 1.0 mm thickness before azimuthal
+integration and a lognormal, uncertainty-weighted `FindScaleFactor1D` fit to
+the supplied reference over `0.12–2.0 nm⁻¹`. This conservative range avoids
+relying on the high-Q tail of
 the desmeared APS USAXS reference. I0 is represented as the incident count rate
 in `count/s`; dividing the count-time-normalized detector signal by I0 therefore
 leaves a dimensionless detector response. The fitted factor is dimensionless
@@ -174,6 +176,10 @@ verified `1/sr` after solid-angle correction and `1/(m sr)` after thickness
 normalization and after applying the shared dimensionless factor for both
 detectors. Q remains stored as `1/m`; the
 live plots numerically convert it to `1/nm`.
+After moving thickness normalization into the corrected 2D detector lanes, a
+full real-data run of measurement 978003 completed successfully and produced
+2,002 concatenated SAXS/WAXS points in `1/(m sr)` with a dimensionless shared
+glassy-carbon scale.
 
 The BufferSource notebook is configured for all four
 measurements and ten ten-frame chunks per measurement. It derives independent

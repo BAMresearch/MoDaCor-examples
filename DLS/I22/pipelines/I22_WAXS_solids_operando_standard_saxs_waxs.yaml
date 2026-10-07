@@ -543,6 +543,24 @@ steps:
       polarization_angular_offset: 0.0
       polarization_angular_offset_units: degree
 
+  TH_sample:
+    module: Divide
+    short_title: Normalize sample by its configured thickness
+    requires_steps: [PO]
+    configuration:
+      divisor_source: sample::/entry1/sample/thickness
+      divisor_units_source: sample::/entry1/sample/thickness@units
+      with_processing_keys: [sample]
+
+  TH_intensity_calibration:
+    module: Divide
+    short_title: Normalize glassy carbon by its 1.0 mm thickness
+    requires_steps: [PO_intensity_calibration]
+    configuration:
+      divisor_source: intensity_calibration::/entry1/sample/thickness
+      divisor_units_source: intensity_calibration::/entry1/sample/thickness@units
+      with_processing_keys: [intensity_calibration]
+
   AV:
     module: IndexedAverager
     short_title: WAXS azimuthal integration
@@ -560,7 +578,7 @@ steps:
   AV_intensity_calibration:
     module: IndexedAverager
     short_title: Glassy-carbon WAXS azimuthal integration
-    requires_steps: [PO_intensity_calibration]
+    requires_steps: [TH_intensity_calibration]
     configuration:
       value_key: signal
       index_key: bin_index
@@ -593,28 +611,10 @@ steps:
         combined: [Poisson, SEM]
       ignore_missing: true
 
-  TH_sample:
-    module: Divide
-    short_title: Normalize sample by its configured thickness
-    requires_steps: [CU]
-    configuration:
-      divisor_source: sample::/entry1/sample/thickness
-      divisor_units_source: sample::/entry1/sample/thickness@units
-      with_processing_keys: [sample]
-
-  TH_intensity_calibration:
-    module: Divide
-    short_title: Normalize glassy carbon by its 1.0 mm thickness
-    requires_steps: [CU_intensity_calibration]
-    configuration:
-      divisor_source: intensity_calibration::/entry1/sample/thickness
-      divisor_units_source: intensity_calibration::/entry1/sample/thickness@units
-      with_processing_keys: [intensity_calibration]
-
   CP_intensity_calibration_fit:
     module: CopyDataBundleKeys
     short_title: Copy glassy-carbon curve for absolute-scale fitting
-    requires_steps: [TH_intensity_calibration]
+    requires_steps: [CU_intensity_calibration]
     configuration:
       with_processing_keys: [intensity_calibration_fit, intensity_calibration]
       data_keys: [signal, Q]
@@ -646,7 +646,7 @@ steps:
   AU:
     module: MultiplyDatabundles
     short_title: Apply glassy-carbon absolute intensity scale
-    requires_steps: [TH_sample, SF]
+    requires_steps: [CU, SF]
     configuration:
       with_processing_keys: [sample, intensity_calibration_fit]
       multiplicand_data_key: signal
@@ -680,7 +680,7 @@ steps:
   PL_2D:
     module: Plot2DVisualization
     short_title: Live WAXS corrected 2D image
-    requires_steps: [PO]
+    requires_steps: [TH_sample]
     configuration:
       target: plots::waxs-2d
       data_path: /sample/signal/signal
@@ -690,7 +690,7 @@ steps:
   SV_2D:
     module: SinkProcessingData
     short_title: Save WAXS sample after 2D plot
-    requires_steps: [PO]
+    requires_steps: [TH_sample]
     configuration:
       target: result_hdf::after_plot_2d
       data_paths:
