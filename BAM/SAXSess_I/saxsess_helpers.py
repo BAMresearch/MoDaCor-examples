@@ -328,20 +328,35 @@ def preprocess_measurements(
             units="dimensionless",
         )
 
-    def overall_transmission(
-        measurement_id: str, active: set[str] | None = None
-    ) -> BaseData:
+    def overall_transmission(measurement_id: str) -> BaseData:
+        """Return the direct foil ratio to the empty-chamber root.
+
+        Computing this from the two primitive count totals retains the physical
+        background-chain traceability without treating adjacent ratios as
+        independent. Intermediate foil counts cancel algebraically.
+        """
+
         if measurement_id in transmission_cache:
             return transmission_cache[measurement_id]
-        active = set() if active is None else active
-        if measurement_id in active:
-            raise ValueError(f"Cycle in background chain at {measurement_id}")
-        active.add(measurement_id)
         row = indexed.loc[measurement_id]
-        value = local_transmission(measurement_id)
-        if row["background_id"]:
-            value = value * overall_transmission(row["background_id"], active)
-        active.remove(measurement_id)
+        root_id = root_measurement(measurement_id)
+        if measurement_id == root_id:
+            value = BaseData(
+                signal=1.0,
+                uncertainties={UNCERTAINTY_KEY: 0.0},
+                units="dimensionless",
+            )
+            transmission_cache[measurement_id] = value
+            return value
+        child_counts = integral(row["transmission_id"])
+        root_counts = integral(indexed.loc[root_id, "transmission_id"])
+        signal = child_counts / root_counts
+        uncertainty = signal * np.sqrt(1.0 / child_counts + 1.0 / root_counts)
+        value = BaseData(
+            signal=signal,
+            uncertainties={UNCERTAINTY_KEY: uncertainty},
+            units="dimensionless",
+        )
         transmission_cache[measurement_id] = value
         return value
 
@@ -371,13 +386,25 @@ def preprocess_measurements(
         root_id = root_measurement(measurement_id)
         root_transmission_id = indexed.loc[root_id, "transmission_id"]
         root_counts = integral(root_transmission_id)
+        transmission_id = row["transmission_id"]
+        transmitted_counts = integral(transmission_id)
+        transmission_frame_count = stack(transmission_id).shape[0]
+        transmission_exposure = exposure_time * transmission_frame_count
         relative_flux = (
             BaseData(
                 signal=root_counts,
                 uncertainties={UNCERTAINTY_KEY: np.sqrt(root_counts)},
-                units="AFU",
+                units="count",
             )
-            / exposure_time
+            / transmission_exposure
+        )
+        transmitted_flux = (
+            BaseData(
+                signal=transmitted_counts,
+                uncertainties={UNCERTAINTY_KEY: np.sqrt(transmitted_counts)},
+                units="count",
+            )
+            / transmission_exposure
         )
 
         thickness_value = row.get("thickness_m", np.nan)
@@ -512,7 +539,11 @@ def preprocess_measurements(
                 "transmission",
                 overall_transmission(measurement_id),
                 attrs={
-                    "description": "Product of foil ratios along the background chain"
+                    "description": (
+                        "Direct foil ratio to the empty-chamber root; equivalent "
+                        "to the chained transmission with correlated intermediate "
+                        "measurements cancelled"
+                    )
                 },
             )
             _write_base_data(
@@ -528,7 +559,22 @@ def preprocess_measurements(
                 "relative_flux",
                 relative_flux,
                 attrs={
-                    "description": f"Foil fluorescence of root measurement {root_id}"
+                    "description": (
+                        f"Foil fluorescence rate of root measurement {root_id}, "
+                        f"integrated over {transmission_frame_count} frames"
+                    )
+                },
+            )
+            _write_base_data(
+                beam,
+                "transmitted_flux",
+                transmitted_flux,
+                attrs={
+                    "description": (
+                        f"Direct foil fluorescence rate for transmission measurement "
+                        f"{transmission_id}, integrated over "
+                        f"{transmission_frame_count} frames"
+                    )
                 },
             )
             _write_base_data(beam, "incident_wavelength", wavelength)

@@ -2,7 +2,7 @@
 
 This example processes six aliquots of BAM reference material N008 measured on
 SAXSess-I on 2026-06-08. It starts from the original multi-frame Mythen2 TIFFs,
-derives the manually acquired transmission and relative-flux quantities, and
+derives the manually acquired transmission and transmitted-beam quantities, and
 runs the full MoDaCor correction graph to produce one absolute-intensity
 `I(Q)` curve per aliquot.
 
@@ -35,13 +35,19 @@ location fields but no person names or email addresses.
 `saxsess_helpers.py` converts the TIFFs and workbook into compact HDF5 sources
 below `work/preprocessed/`. Preprocessing is limited to acquisition-format
 translation and quantities that must be reconstructed from this manual
-instrument: beam-centre location, foil fluorescence, the chained transmission,
-relative flux, and measurement metadata.
+instrument: beam-centre location, foil fluorescence, local transmission, the
+direct empty-chamber-referenced transmission, transmitted detector-count rate, and
+measurement metadata. The direct rate is used for correction because it is
+algebraically equivalent to relative flux times overall transmission without
+treating their shared empty-chamber count as an independent uncertainty twice.
+The foil ROI is stored as a detector count rate, so dividing the scattering
+count rate by the transmitted count rate yields a dimensionless response
+without an artificial unit-label change.
 
 `pipelines/SAXSess_I_N008_absolute.yaml` then applies:
 
 1. Poisson uncertainties, exposure-time normalization, dark-current
-   subtraction, relative-flux normalization, and transmission normalization;
+   subtraction, and direct transmitted-beam normalization;
 2. frame averaging and water-background subtraction;
 3. detector geometry, solid-angle correction, and thickness normalization;
 4. water-based absolute-intensity calibration over `2–4 nm^-1`;
@@ -49,7 +55,9 @@ relative flux, and measurement metadata.
 6. combined q/intensity uncertainties and CSV/HDF5 export.
 
 The expected CSV columns are q, q uncertainty, absolute intensity, and
-intensity uncertainty, with units `1/nm`, `1/nm`, `1/(m sr)`, and `1/(m sr)`.
+intensity uncertainty, with canonical MoDaCor 1.11 units `1/m`, `1/m`,
+`1/(m sr)`, and `1/(m sr)`. The notebook converts q and its uncertainty to
+`1/nm` for plotting.
 
 ## Running the example
 
@@ -58,7 +66,7 @@ BAM/SAXSess_I` from the repository root. Before the first Zenodo release,
 contributors must obtain the development payload directly from the
 maintainers.
 
-Use the current MoDaCor development baseline documented in the repository root
+Use MoDaCor 1.11 (or its current compatible development baseline)
 with the `server` extra, plus pandas, openpyxl, Pillow, PyYAML, h5py, and
 matplotlib. Start Jupyter from the repository root or this directory and run
 `SAXSess_I_N008_absolute.ipynb` from top to bottom.
@@ -76,14 +84,22 @@ unchanged water/background/calibration branches.
 
 ## Current validation and release gates
 
-The complete six-aliquot validation used MoDaCor 1.8.0 and the then-current
-53-step pipeline. The pipeline has since been migrated to the breaking generic
-indexing and averaging interfaces; its current 55-step form prepares with the
-development baseline, but the complete batch has not yet been rerun after that
-migration. In the recorded run every output contained 98 finite q/intensity
-pairs over approximately `0.103–5.88 nm^-1`, in absolute units of `1/(m sr)`.
-The first run was full and all five later runs used partial invalidation as
-intended.
+The complete six-aliquot validation used MoDaCor 1.11.0 and the expanded
+50-step pipeline. Four repeated subpipelines are authored with `step_blocks`
+and `for_each`. Every output contained 98 finite q/intensity pairs over
+approximately `0.103–5.88 nm^-1`, in absolute units of `1/(m sr)`. The first
+run completed in full mode and all five later runs used partial invalidation as
+intended. After conversion to the same q units and interpolation onto the same
+q positions, the absolute intensities agree with the retained pre-migration
+results to better than `1e-6` relative over 95% of each curve.
+
+The overall transmission is evaluated directly from the sample-path and empty-
+chamber foil counts, so intermediate empty-capillary and water counts cancel in
+both value and uncertainty. The local ratios are retained in the preprocessed
+HDF5 for auditability. The final intensity uncertainty combines independent
+geometry and counting/frame contributions in quadrature; within the counting
+contribution, the larger of propagated Poisson and observed frame scatter is
+used to avoid counting the same variation twice.
 
 The instrument constants in `config/SAXSess_I.yaml` were carried over from the
 supplied legacy notebook/static YAML and remain provisional until checked
