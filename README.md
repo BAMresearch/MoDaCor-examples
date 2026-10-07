@@ -4,17 +4,18 @@ This repository is the canonical collection of instrument-specific MoDaCor
 application examples. Each example combines a runnable notebook, one or more
 pipeline YAML files, and enough representative data to exercise the workflow.
 
-The BAM MOUSE example data are published and citable as version 1.0.0. The
-broader collection remains under active development: more instruments will be
-added, their licensing and metadata decisions remain open, and a future source
-release will pin an exact MoDaCor version across the collection.
+The BAM MOUSE and Diamond Light Source I22 example data are published and
+citable as version 1.0.0. The broader collection remains under active
+development: more instruments will be added, their licensing and metadata
+decisions remain open, and a future source release will pin an exact MoDaCor
+version across the collection.
 
 ## Instrument catalogue
 
 | Facility | Instrument | Current contents | Status |
 | --- | --- | --- | --- |
 | BAM | MOUSE | Ten-configuration sample/background pair and solids pipelines | [Dataset 1.0.0 published](https://doi.org/10.5281/zenodo.22872281) |
-| DLS | I22 | Four SAXS/WAXS measurements, background, calibration, masks, and four focused notebooks | Runnable batch plus Buffer/HDF/Tiled chunk demonstrations; full archive run pending |
+| DLS | I22 | Four SAXS/WAXS and four USAXS acquisitions, backgrounds, calibrations, masks, and focused notebooks | [Dataset 1.0.0 published](https://doi.org/10.5281/zenodo.23207188) |
 | BAM | SAXSess I | Six N008 aliquots with complete manual-instrument calibration set | Runnable absolute-intensity example |
 | BAM | SAXSess II | Placeholder | Planned |
 | DLS | B21 | BSA dilution series, DAWN references, and chunked-HDF notebook scaffold | Processing design pending |
@@ -121,7 +122,7 @@ workflows must also be rerun from a clean extracted copy.
 
 ## Data volume and storage
 
-The current working collection is approximately 1.8 GB and will grow as more
+The current working collection is approximately 3.3 GB and will grow as more
 instruments are added. The Git repository deliberately remains lightweight:
 it ignores extracted `data/` trees and tracks their manifests. Each instrument
 is packaged as a separate ZIP archive so users can download only the examples
@@ -131,7 +132,9 @@ and release workflow.
 ## Release status
 
 The BAM MOUSE data are released as version 1.0.0 under the version-specific DOI
-[10.5281/zenodo.22872281](https://doi.org/10.5281/zenodo.22872281). See its
-instrument README for the preferred citation. The repository source and the
+[10.5281/zenodo.22872281](https://doi.org/10.5281/zenodo.22872281), and the
+Diamond Light Source I22 data are released as version 1.0.0 under
+[10.5281/zenodo.23207188](https://doi.org/10.5281/zenodo.23207188). See each
+instrument README for its preferred citation. The repository source and the
 other instrument datasets remain development material until separately
 released.

@@ -1,8 +1,11 @@
 # Diamond Light Source I22 example
 
-This example demonstrates batch processing of operando SAXS and WAXS data from
-Diamond Light Source beamline I22. Four sample measurements are paired with one
-empty-cell background and detector-specific calibration and mask files.
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23207188.svg)](https://doi.org/10.5281/zenodo.23207188)
+
+This example demonstrates processing of operando SAXS, WAXS, and USAXS data
+from Diamond Light Source beamline I22. Four SAXS/WAXS sample measurements are
+paired with one empty-cell background and detector-specific calibration and
+mask files. Three USAXS sample acquisitions share one empty-furnace background.
 
 ## Packaged inputs
 
@@ -13,12 +16,16 @@ empty-cell background and detector-specific calibration and mask files.
   its detector and readout sidecars. Its native thickness field is missing, so
   preprocessing records the independently known thickness of 1.0 mm.
 - Absolute reference curve: `Glassy Carbon L average.dat` (Q in Å⁻¹ and
-  intensity in cm⁻¹ sr⁻¹), with the accompanying provenance email text.
+  intensity in cm⁻¹ sr⁻¹). The accompanying email was reviewed but is omitted
+  because it contained no useful provenance information.
 - Unobstructed-beam transmission reference: `i22-977723.nxs` for this data set.
   It is configured separately from the background in each notebook so another
   reference can be used, for example when the background is an empty capillary.
 - Detector, I0, beamstop-diode, and user-tetramm HDF5 sidecars for each master.
 - SAXS/WAXS calibration and mask files in `data/processing/`.
+- USAXS empty-furnace scans `977724`--`977727` and sample scan groups
+  `978497`--`978500`, `978502`--`978505`, and `978507`--`978510`, with their
+  NeXus/HDF5 sidecars in `data/usaxs/`.
 - Recommended ordinary-processing pipeline:
   `pipelines/I22_SAXS_WAXS_solids_operando.yaml`. It processes only SAXS and
   WAXS, in one graph, and uses the SAXS glassy-carbon result for both detector
@@ -36,11 +43,29 @@ empty-cell background and detector-specific calibration and mask files.
 The small NeXus master files contain relative external links to their HDF5
 sidecars. Keep each master and its sidecars together in `data/`.
 
+The data payload is licensed under CC BY 4.0; see `DATA_LICENSE.json` and
+`DATA_LICENSE.txt`.
+
+## Data availability
+
+The notebooks use version 1.0.0 of the Diamond Light Source I22 example
+dataset, archived on Zenodo under the version-specific DOI
+[10.5281/zenodo.23207188](https://doi.org/10.5281/zenodo.23207188). The tracked
+`data-manifest.json` binds this example to the exact archive and records its
+size, SHA-256 checksum, and the checksums of all extracted files.
+
+The preferred citation is:
+
+> Pauw, Brian Richard, Müller-Elmau, Johanna, Bleßmann, Finn Eric, & Smith,
+> Andrew. (2026). *Diamond Light Source I22 SAXS/WAXS/USAXS example data for
+> MoDaCor* (Version 1.0.0) [Data set]. Zenodo.
+> https://doi.org/10.5281/zenodo.23207188
+
 ## Running the example
 
 If `data/` is absent, first run `python tools/data_repository.py download
-DLS/I22` from the repository root. Before the first Zenodo release,
-contributors must obtain the development payload directly from the maintainers.
+DLS/I22` from the repository root. This downloads and verifies dataset version
+1.0.0 from Zenodo.
 
 Start Jupyter from the repository root or this directory, select the prepared
 MoDaCor kernel, and choose one focused notebook:
@@ -126,8 +151,13 @@ samples, background, and glassy-carbon measurement with working relative HDF5
 links. The USAXS tests validate
 the compact 184-step graph and preprocessing, and all four packaged USAXS
 acquisitions preprocess successfully. Complete SAXS and WAXS pipeline
-equivalence and the full server processing loop remain release-freeze
+equivalence and the full server processing loop remain follow-up workflow
 validation tasks.
+
+On 2026-10-07, the published Zenodo record and public file endpoint were
+checked against the frozen local archive. The filename, 2,283,982,640-byte
+size, and Zenodo MD5 checksum matched exactly; all 113 local payload files also
+passed their manifest SHA-256 checks.
 
 An October 2026 real-data smoke run of the combined graph fitted the
 dimensionless factor `1.68143098e-17` over `0.12–2.0 nm⁻¹` (88 reference points; reduced
@@ -202,7 +232,7 @@ PNG/SVG/PDF plots below
 ignored by Git. The processing date and MoDaCor version are also recorded in
 the notebook so later benchmark runs can be distinguished from these results.
 
-## Provisional values and release gates
+## Provisional processing values and follow-up checks
 
 - The old absolute-intensity scalar `3.8e-15` is retained only for the DAWN
   cross-check and is still carried by older chunk-source schemas for
@@ -219,6 +249,8 @@ the notebook so later benchmark runs can be distinguished from these results.
 - A future thickness path should infer the effective thickness from measured
   X-ray absorption together with atomic composition and gravimetric density,
   rather than relying on the acquisition-title value.
-- The NeXus metadata include a proposal identifier, facility username, and an
-  email-like title value. Permission and retention/sanitization must be
-  resolved before public release.
+- The NeXus metadata include experiment identifiers `sm43108-1` and
+  `sm43533-1`, plus facility account usernames `ckn54496` and `hck38156`.
+  No email address was found; the apparent email-like value was ordinary `@`
+  temperature notation in sample titles. These non-secret identifiers are
+  retained as acquisition provenance in the public data package.
