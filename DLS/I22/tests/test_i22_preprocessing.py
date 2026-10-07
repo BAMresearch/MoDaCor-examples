@@ -209,9 +209,16 @@ def test_operational_pipelines_normalize_time_before_transmission_and_flux() -> 
         assert steps["TH_intensity_calibration"]["configuration"]["divisor_source"] == (
             "intensity_calibration::/entry1/sample/thickness"
         )
+        assert steps["TH_intensity_calibration"]["requires_steps"] == [
+            "PO_intensity_calibration"
+        ]
         assert steps["TH_sample"]["configuration"]["divisor_source"] == (
             "sample::/entry1/sample/thickness"
         )
+        assert steps["TH_sample"]["requires_steps"] == ["PO"]
+        assert steps["AV_intensity_calibration"]["requires_steps"] == [
+            "TH_intensity_calibration"
+        ]
         scale_fit = steps["SF"]["configuration"]
         assert scale_fit["with_processing_keys"] == [
             "intensity_calibration_fit",
@@ -225,7 +232,7 @@ def test_operational_pipelines_normalize_time_before_transmission_and_flux() -> 
             "multiplicand_data_key": "signal",
             "multiplier_data_key": "absolute_intensity_scale_factor",
         }
-        assert steps["AU"]["requires_steps"] == ["TH_sample", "SF"]
+        assert steps["AU"]["requires_steps"] == ["CU", "SF"]
         assert "UL_intensity_calibration" not in steps
         assert "SF_units" not in steps
 
@@ -266,7 +273,7 @@ def test_combined_pipeline_expands_readable_detector_lanes() -> None:
 
     assert "USAXS" not in pipeline.name
     assert len(nodes) == 96
-    assert sum("origin" in node for node in nodes.values()) == 86
+    assert sum("origin" in node for node in nodes.values()) == 87
     assert list(blocks) == [
         "normalize_frames",
         "detector_geometry",
@@ -309,18 +316,36 @@ def test_combined_pipeline_expands_readable_detector_lanes() -> None:
         ]
 
     for item, processing_key in {"saxs": "sample", "waxs": "waxs_sample"}.items():
-        prefix = f"integrate_sample.{item}"
-        assert nodes[f"{prefix}.normalize_thickness"]["config"]["with_processing_keys"] == [
+        correction_prefix = f"correct_detector.{item}"
+        integration_prefix = f"integrate_sample.{item}"
+        assert nodes[f"{correction_prefix}.normalize_thickness"]["config"]["with_processing_keys"] == [
             processing_key
         ]
-        assert nodes[f"{prefix}.apply_absolute_scale"]["config"]["with_processing_keys"] == [
+        assert nodes[f"{correction_prefix}.normalize_thickness"]["requires_steps"] == [
+            f"{correction_prefix}.polarization"
+        ]
+        assert nodes[f"{integration_prefix}.azimuthal_average"]["requires_steps"] == [
+            f"{integration_prefix}.plot_2d",
+            f"{integration_prefix}.save_2d",
+        ]
+        assert nodes[f"{integration_prefix}.apply_absolute_scale"]["config"]["with_processing_keys"] == [
             processing_key,
             "intensity_calibration_fit",
         ]
-        assert set(nodes[f"{prefix}.apply_absolute_scale"]["requires_steps"]) == {
-            f"{prefix}.normalize_thickness",
+        assert set(nodes[f"{integration_prefix}.apply_absolute_scale"]["requires_steps"]) == {
+            f"{integration_prefix}.combine_uncertainties",
             "SF",
         }
+
+    assert nodes["correct_detector.saxs_glassy_carbon.normalize_thickness"]["config"][
+        "divisor_source"
+    ] == "intensity_calibration::/entry1/sample/thickness"
+    assert nodes["AV_intensity_calibration"]["requires_steps"] == [
+        "correct_detector.saxs_glassy_carbon.normalize_thickness"
+    ]
+    assert nodes["CP_intensity_calibration_fit"]["requires_steps"] == [
+        "CU_intensity_calibration"
+    ]
 
     assert nodes["PD_intensity_calibration_reference_I"]["config"]["units_override"] == (
         "1/(cm*sr)"

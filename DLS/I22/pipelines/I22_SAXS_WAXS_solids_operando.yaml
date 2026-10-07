@@ -238,6 +238,8 @@ step_blocks:
         processing_key: sample
         background_key: background
         static_key: static
+        thickness_source: sample::/entry1/sample/thickness
+        thickness_units_source: sample::/entry1/sample/thickness@units
         normalized_requires:
           [normalize_frames.saxs_sample.reduce_raw_mask, normalize_frames.saxs_background.reduce_raw_mask]
         map_requires:
@@ -248,6 +250,8 @@ step_blocks:
         processing_key: waxs_sample
         background_key: waxs_background
         static_key: waxs_static
+        thickness_source: sample::/entry1/sample/thickness
+        thickness_units_source: sample::/entry1/sample/thickness@units
         normalized_requires:
           [normalize_frames.waxs_sample.reduce_raw_mask, normalize_frames.waxs_background.reduce_raw_mask]
         map_requires:
@@ -258,6 +262,8 @@ step_blocks:
         processing_key: intensity_calibration
         background_key: background
         static_key: static
+        thickness_source: intensity_calibration::/entry1/sample/thickness
+        thickness_units_source: intensity_calibration::/entry1/sample/thickness@units
         normalized_requires:
           [normalize_frames.saxs_glassy_carbon.reduce_raw_mask, normalize_frames.saxs_background.reduce_raw_mask]
         map_requires:
@@ -337,12 +343,20 @@ step_blocks:
           polarization_factor: 0.9
           polarization_angular_offset: 0.0
           polarization_angular_offset_units: degree
+      normalize_thickness:
+        module: Divide
+        short_title: Normalize corrected detector image by specimen thickness
+        requires_steps: [.polarization]
+        configuration:
+          divisor_source: "${thickness_source}"
+          divisor_units_source: "${thickness_units_source}"
+          with_processing_keys: ["${processing_key}"]
 
   integrate_sample:
     for_each:
       saxs:
         processing_key: sample
-        polarization_step: correct_detector.saxs.polarization
+        corrected_step: correct_detector.saxs.normalize_thickness
         plot_target: plots::saxs-2d
         data_path: /sample/signal/signal
         plot_title: SAXS corrected 2D detector image
@@ -350,7 +364,7 @@ step_blocks:
         sink_data_paths: [/sample]
       waxs:
         processing_key: waxs_sample
-        polarization_step: correct_detector.waxs.polarization
+        corrected_step: correct_detector.waxs.normalize_thickness
         plot_target: plots::waxs-2d
         data_path: /waxs_sample/signal/signal
         plot_title: WAXS corrected 2D detector image
@@ -360,7 +374,7 @@ step_blocks:
       plot_2d:
         module: Plot2DVisualization
         short_title: Live corrected 2D detector image
-        requires_steps: ["${polarization_step}"]
+        requires_steps: ["${corrected_step}"]
         configuration:
           target: "${plot_target}"
           data_path: "${data_path}"
@@ -369,7 +383,7 @@ step_blocks:
       save_2d:
         module: SinkProcessingData
         short_title: Save corrected 2D detector image
-        requires_steps: ["${polarization_step}"]
+        requires_steps: ["${corrected_step}"]
         configuration:
           target: "${sink_target}"
           data_paths: "${sink_data_paths}"
@@ -396,18 +410,10 @@ step_blocks:
           combinations:
             combined: [Poisson, SEM]
           ignore_missing: true
-      normalize_thickness:
-        module: Divide
-        short_title: Normalize by sample thickness
-        requires_steps: [.combine_uncertainties]
-        configuration:
-          divisor_source: sample::/entry1/sample/thickness
-          divisor_units_source: sample::/entry1/sample/thickness@units
-          with_processing_keys: ["${processing_key}"]
       apply_absolute_scale:
         module: MultiplyDatabundles
         short_title: Apply shared glassy-carbon scale
-        requires_steps: [.normalize_thickness, SF]
+        requires_steps: [.combine_uncertainties, SF]
         configuration:
           with_processing_keys: ["${processing_key}", intensity_calibration_fit]
           multiplicand_data_key: signal
@@ -441,7 +447,7 @@ steps:
   AV_intensity_calibration:
     module: IndexedAverager
     short_title: Glassy-carbon SAXS azimuthal integration
-    requires_steps: [correct_detector.saxs_glassy_carbon.polarization]
+    requires_steps: [correct_detector.saxs_glassy_carbon.normalize_thickness]
     configuration:
       value_key: signal
       index_key: bin_index
@@ -463,19 +469,10 @@ steps:
         combined: [Poisson, SEM]
       ignore_missing: true
 
-  TH_intensity_calibration:
-    module: Divide
-    short_title: Normalize glassy carbon by its 1.0 mm thickness
-    requires_steps: [CU_intensity_calibration]
-    configuration:
-      divisor_source: intensity_calibration::/entry1/sample/thickness
-      divisor_units_source: intensity_calibration::/entry1/sample/thickness@units
-      with_processing_keys: [intensity_calibration]
-
   CP_intensity_calibration_fit:
     module: CopyDataBundleKeys
     short_title: Copy glassy-carbon curve for absolute-scale fitting
-    requires_steps: [TH_intensity_calibration]
+    requires_steps: [CU_intensity_calibration]
     configuration:
       with_processing_keys: [intensity_calibration_fit, intensity_calibration]
       data_keys: [signal, Q]
