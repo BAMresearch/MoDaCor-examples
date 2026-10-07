@@ -393,9 +393,9 @@ steps:
       sample_z_units_source: sample::/entry1/sample/transformations/sample_x@units
 
       # wavelength (scalar length)
-      wavelength_source: sample::/entry1/sample/beam/incident_wavelength
-      wavelength_units_source: sample::/entry1/sample/beam/incident_wavelength@units
-      wavelength_uncertainties_sources:
+      photon_source: sample::/entry1/sample/beam/incident_wavelength
+      photon_units_source: sample::/entry1/sample/beam/incident_wavelength@units
+      photon_uncertainties_sources:
         wavelength_error: sample::/entry1/sample/beam/wavelength_error
 
       # pixel pitch (length / pixel) for Omega
@@ -479,18 +479,15 @@ steps:
   # Precalculation for azimuthal averaging
   # -----------------------
   IP:
-    module: IndexPixels
+    module: IndexByCoordinate
     short_title: "Index pixels for averaging"
     requires_steps: [TH]
     configuration: 
-      averaging_direction: azimuthal
-      q_min: 0.01
-      q_max: 60.0
-      q_limits_unit: nm^-1
-      bin_type: log
-      psi_min: -180.0   # positive half only for SAXSess data, i.e. not below the direct beam
-      psi_max: 180.0
-      psi_limits_unit: degrees
+      coordinate_key: Q
+      bin_min: 0.01
+      bin_max: 60.0
+      bin_units: nm^-1
+      spacing: log
       n_bins: 200
       with_processing_keys: [sample]
 
@@ -499,9 +496,12 @@ steps:
     short_title: "Azimuthal averaging"
     requires_steps: [IP, PL_2D]
     configuration: 
-      averaging_direction: azimuthal
-      use_signal_weights: true
-      use_signal_uncertainty_weights: false
+      value_key: signal
+      index_key: bin_index
+      axis_key: Q
+      mask_key: mask
+      use_value_weights: true
+      use_value_uncertainty_weights: false
       uncertainty_weight_key: null
       with_processing_keys: [sample]
 

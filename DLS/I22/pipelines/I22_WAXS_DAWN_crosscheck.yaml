@@ -104,22 +104,19 @@ steps:
       sample_z_override:
         value: 0.0
         units: mm
-      wavelength_source: waxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
-      wavelength_units_source: waxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
+      photon_source: waxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
+      photon_units_source: waxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
 
   IP_static:
-    module: IndexPixels
+    module: IndexByCoordinate
     short_title: Index WAXS pixels
     requires_steps: [GX_static]
     configuration:
-      averaging_direction: azimuthal
-      q_min: 0.44241476418082226
-      q_max: 5.471698841709772
-      q_limits_unit: 1/angstrom
-      bin_type: linear
-      psi_min: -180.0
-      psi_max: 180.0
-      psi_limits_unit: degree
+      coordinate_key: Q
+      bin_min: 0.44241476418082226
+      bin_max: 5.471698841709772
+      bin_units: 1/angstrom
+      spacing: linear
       n_bins: 1502
       with_processing_keys: [static]
 
@@ -129,7 +126,7 @@ steps:
     requires_steps: [FA_sample, IP_static, PD_static_mask]
     configuration:
       with_processing_keys: [sample, static]
-      data_keys: [mask, Q, Psi, TwoTheta, CosAlpha, Omega, pixel_index]
+      data_keys: [mask, Q, Psi, TwoTheta, CosAlpha, Omega, bin_index]
       copy: false
 
   MASK_instrument_dilate:
@@ -189,9 +186,12 @@ steps:
     short_title: WAXS azimuthal integration
     requires_steps: [AL]
     configuration:
-      averaging_direction: azimuthal
-      use_signal_weights: true
-      use_signal_uncertainty_weights: false
+      value_key: signal
+      index_key: bin_index
+      axis_key: Q
+      mask_key: mask
+      use_value_weights: true
+      use_value_uncertainty_weights: false
       uncertainty_weight_key: null
       with_processing_keys: [sample]
 

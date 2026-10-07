@@ -1,11 +1,14 @@
 name: I22 SAXS solids operando
 description: >-
-  First-pass I22 SAXS correction pipeline. The raw detector frames remain
+  I22 SAXS correction and glassy-carbon absolute-intensity calibration pipeline.
+  The raw detector frames remain
   externally linked from compact notebook-preprocessed measurement files; the
   preprocessor only reshapes or summarizes frame-wise metadata. Detector geometry
   is resolved by MoDaCor directly from the NeXus calibration files. After
   count-time normalization, the signal is divided by the calibrated sample
   transmission and the incident I0 flux; both readouts are non-integrating.
+  Measurement 966700 follows the same correction path, is normalized by its
+  known 1.0 mm thickness, and is fitted to the Glassy Carbon L reference curve.
 steps:
   PD_sample:
     module: AppendProcessingData
@@ -28,6 +31,41 @@ steps:
       signal_location: background::/entry1/detector/data
       units_override: count
       rank_of_data: 2
+
+  PD_intensity_calibration:
+    module: AppendProcessingData
+    short_title: Load SAXS glassy-carbon measurement
+    requires_steps: []
+    configuration:
+      processing_key: intensity_calibration
+      databundle_output_key: signal
+      signal_location: intensity_calibration::/entry1/detector/data
+      units_override: count
+      rank_of_data: 2
+
+  PD_intensity_calibration_reference_I:
+    module: AppendProcessingData
+    short_title: Load glassy-carbon reference intensity
+    requires_steps: []
+    configuration:
+      processing_key: intensity_calibration_reference
+      databundle_output_key: signal
+      signal_location: intensity_calibration_reference::I
+      units_override: 1/(cm*sr)
+      uncertainties_sources:
+        combined: intensity_calibration_reference::I_sigma
+      rank_of_data: 1
+
+  PD_intensity_calibration_reference_Q:
+    module: AppendProcessingData
+    short_title: Load glassy-carbon reference Q
+    requires_steps: [PD_intensity_calibration_reference_I]
+    configuration:
+      processing_key: intensity_calibration_reference
+      databundle_output_key: Q
+      signal_location: intensity_calibration_reference::Q
+      units_override: 1/angstrom
+      rank_of_data: 1
 
   PD_static_signal:
     module: AppendProcessingData
@@ -123,6 +161,78 @@ steps:
       axes: [0, 1]
       reduction: any
 
+  PU_intensity_calibration:
+    module: PoissonUncertainties
+    short_title: Glassy-carbon Poisson uncertainties
+    requires_steps: [MK_raw_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration]
+
+  MK_raw_intensity_calibration:
+    module: ThresholdMask
+    short_title: Glassy-carbon raw-count validity mask
+    requires_steps: [PD_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration]
+      source_basedata_key: signal
+      target_mask_key: raw_count_mask
+      lower_bound: 0.0
+      upper_bound: 10000000.0
+      mask_mode: outside
+
+  TI_intensity_calibration:
+    module: Divide
+    short_title: Glassy-carbon count-time normalization
+    requires_steps: [PU_intensity_calibration]
+    configuration:
+      divisor_source: intensity_calibration::/modacor/normalization/saxs_count_time
+      divisor_units_source: intensity_calibration::/modacor/normalization/saxs_count_time@units
+      with_processing_keys: [intensity_calibration]
+
+  TR_intensity_calibration:
+    module: Divide
+    short_title: Glassy-carbon transmission normalization
+    requires_steps: [TI_intensity_calibration]
+    configuration:
+      divisor_source: intensity_calibration::/entry1/sample/transmission
+      divisor_units_source: intensity_calibration::/entry1/sample/transmission@units
+      divisor_uncertainties_sources:
+        transmission_SEM: intensity_calibration::/entry1/sample/transmission_sem
+      with_processing_keys: [intensity_calibration]
+
+  FL_intensity_calibration:
+    module: Divide
+    short_title: Glassy-carbon incident I0 flux normalization
+    requires_steps: [TR_intensity_calibration]
+    configuration:
+      divisor_source: intensity_calibration::/modacor/normalization/i0_channel_1_mean
+      divisor_units_source: intensity_calibration::/modacor/normalization/i0_channel_1_mean@units
+      divisor_uncertainties_sources:
+        I0_SEM: intensity_calibration::/modacor/normalization/i0_channel_1_sem
+      with_processing_keys: [intensity_calibration]
+
+  FA_intensity_calibration:
+    module: ReduceDimensionality
+    short_title: Average glassy-carbon frames
+    requires_steps: [FL_intensity_calibration]
+    configuration:
+      axes: [0, 1]
+      use_weights: true
+      nan_policy: propagate
+      reduction: mean
+      with_processing_keys: [intensity_calibration]
+
+  MK_raw_intensity_calibration_reduce:
+    module: ReduceMask
+    short_title: Collapse glassy-carbon raw-count mask
+    requires_steps: [FA_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration]
+      source_mask_key: raw_count_mask
+      target_mask_key: raw_count_mask
+      axes: [0, 1]
+      reduction: any
+
   PU_background:
     module: PoissonUncertainties
     short_title: Background Poisson uncertainties
@@ -202,6 +312,13 @@ steps:
     configuration:
       with_processing_keys: [sample, background]
 
+  BG_intensity_calibration:
+    module: SubtractDatabundles
+    short_title: Subtract glassy-carbon background
+    requires_steps: [MK_raw_intensity_calibration_reduce, MK_raw_background_reduce]
+    configuration:
+      with_processing_keys: [intensity_calibration, background]
+
   PC_static:
     module: PixelCoordinates3D
     short_title: SAXS pixel coordinates
@@ -228,22 +345,19 @@ steps:
       sample_z_override:
         value: 0.0
         units: mm
-      wavelength_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
-      wavelength_units_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
+      photon_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
+      photon_units_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
 
   IP_static:
-    module: IndexPixels
+    module: IndexByCoordinate
     short_title: Index SAXS pixels
     requires_steps: [GX_static]
     configuration:
-      averaging_direction: azimuthal
-      q_min: 0.03
-      q_max: 3.36
-      q_limits_unit: 1/nm
-      bin_type: log
-      psi_min: -180.0
-      psi_max: 180.0
-      psi_limits_unit: degree
+      coordinate_key: Q
+      bin_min: 0.03
+      bin_max: 3.36
+      bin_units: 1/nm
+      spacing: log
       n_bins: 500
       with_processing_keys: [static]
 
@@ -253,7 +367,16 @@ steps:
     requires_steps: [BG, IP_static, PD_static_mask]
     configuration:
       with_processing_keys: [sample, static]
-      data_keys: [mask, Q, Psi, TwoTheta, CosAlpha, Omega, pixel_index]
+      data_keys: [mask, Q, Psi, TwoTheta, CosAlpha, Omega, bin_index]
+      copy: false
+
+  CP_static_intensity_calibration_maps:
+    module: CopyDataBundleKeys
+    short_title: Attach SAXS static maps to glassy carbon
+    requires_steps: [BG_intensity_calibration, IP_static, PD_static_mask]
+    configuration:
+      with_processing_keys: [intensity_calibration, static]
+      data_keys: [mask, Q, Psi, TwoTheta, CosAlpha, Omega, bin_index]
       copy: false
 
   MK_instrument_dilate:
@@ -262,6 +385,17 @@ steps:
     requires_steps: [CP_static_sample_maps]
     configuration:
       with_processing_keys: [sample]
+      source_mask_key: mask
+      target_mask_key: mask
+      radius: 1
+      footprint_shape: square
+
+  MK_instrument_dilate_intensity_calibration:
+    module: DilateMask
+    short_title: Dilate glassy-carbon SAXS mask
+    requires_steps: [CP_static_intensity_calibration_maps]
+    configuration:
+      with_processing_keys: [intensity_calibration]
       source_mask_key: mask
       target_mask_key: mask
       radius: 1
@@ -277,12 +411,32 @@ steps:
         raw_count_mask: background_raw_count_mask
       copy: false
 
+  CP_background_raw_mask_intensity_calibration:
+    module: CopyDataBundleKeys
+    short_title: Attach background raw mask to glassy carbon
+    requires_steps: [BG_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration, background]
+      key_map:
+        raw_count_mask: background_raw_count_mask
+      copy: false
+
   MK_combined:
     module: BitwiseOrMasks
     short_title: Combine detector masks
     requires_steps: [MK_instrument_dilate, CP_background_raw_mask]
     configuration:
       with_processing_keys: [sample]
+      target_mask_key: mask
+      source_mask_keys: [raw_count_mask, background_raw_count_mask]
+
+  MK_combined_intensity_calibration:
+    module: BitwiseOrMasks
+    short_title: Combine glassy-carbon detector masks
+    requires_steps:
+      [MK_instrument_dilate_intensity_calibration, CP_background_raw_mask_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration]
       target_mask_key: mask
       source_mask_keys: [raw_count_mask, background_raw_count_mask]
 
@@ -293,12 +447,34 @@ steps:
     configuration:
       with_processing_keys: [sample]
 
+  SP_intensity_calibration:
+    module: SolidAngleCorrection
+    short_title: Glassy-carbon SAXS solid-angle correction
+    requires_steps: [MK_combined_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration]
+
   DE:
     module: DetectorEfficiencyCorrection
     short_title: SAXS detector efficiency correction
     requires_steps: [SP]
     configuration:
       with_processing_keys: [sample]
+      material: Si
+      density: 2.33
+      density_units: g/cm^3
+      thickness: 0.32
+      thickness_units: mm
+      wavelength_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
+      wavelength_units_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
+      normalize_to_normal_incidence: true
+
+  DE_intensity_calibration:
+    module: DetectorEfficiencyCorrection
+    short_title: Glassy-carbon SAXS detector efficiency correction
+    requires_steps: [SP_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration]
       material: Si
       density: 2.33
       density_units: g/cm^3
@@ -319,16 +495,44 @@ steps:
       polarization_angular_offset: 0.0
       polarization_angular_offset_units: degree
 
+  PO_intensity_calibration:
+    module: PolarizationCorrection
+    short_title: Glassy-carbon SAXS polarization correction
+    requires_steps: [DE_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration]
+      mode: linear_fraction
+      polarization_factor: 0.9
+      polarization_angular_offset: 0.0
+      polarization_angular_offset_units: degree
+
   AV:
     module: IndexedAverager
     short_title: SAXS azimuthal integration
     requires_steps: [SV_2D, PL_2D]
     configuration:
-      averaging_direction: azimuthal
-      use_signal_weights: true
-      use_signal_uncertainty_weights: false
+      value_key: signal
+      index_key: bin_index
+      axis_key: Q
+      mask_key: mask
+      use_value_weights: true
+      use_value_uncertainty_weights: false
       uncertainty_weight_key: null
       with_processing_keys: [sample]
+
+  AV_intensity_calibration:
+    module: IndexedAverager
+    short_title: Glassy-carbon SAXS azimuthal integration
+    requires_steps: [PO_intensity_calibration]
+    configuration:
+      value_key: signal
+      index_key: bin_index
+      axis_key: Q
+      mask_key: mask
+      use_value_weights: true
+      use_value_uncertainty_weights: false
+      uncertainty_weight_key: null
+      with_processing_keys: [intensity_calibration]
 
   CU:
     module: CombineUncertaintiesMax
@@ -341,14 +545,75 @@ steps:
         combined: [Poisson, SEM]
       ignore_missing: true
 
-  AU:
-    module: Multiply
-    short_title: Absolute intensity scale
+  CU_intensity_calibration:
+    module: CombineUncertaintiesMax
+    short_title: Combine glassy-carbon SAXS uncertainties
+    requires_steps: [AV_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration]
+      target_basedata_key: signal
+      combinations:
+        combined: [Poisson, SEM]
+      ignore_missing: true
+
+  TH_sample:
+    module: Divide
+    short_title: Normalize sample by its configured thickness
     requires_steps: [CU]
     configuration:
-      multiplier_source: sample::/modacor/calibration/absolute_intensity_factor
-      multiplier_units_source: sample::/modacor/calibration/absolute_intensity_factor@units
+      divisor_source: sample::/entry1/sample/thickness
+      divisor_units_source: sample::/entry1/sample/thickness@units
       with_processing_keys: [sample]
+
+  TH_intensity_calibration:
+    module: Divide
+    short_title: Normalize glassy carbon by its 1.0 mm thickness
+    requires_steps: [CU_intensity_calibration]
+    configuration:
+      divisor_source: intensity_calibration::/entry1/sample/thickness
+      divisor_units_source: intensity_calibration::/entry1/sample/thickness@units
+      with_processing_keys: [intensity_calibration]
+
+  CP_intensity_calibration_fit:
+    module: CopyDataBundleKeys
+    short_title: Copy glassy-carbon curve for absolute-scale fitting
+    requires_steps: [TH_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration_fit, intensity_calibration]
+      data_keys: [signal, Q]
+      copy: true
+
+  SF:
+    module: FindScaleFactor1D
+    short_title: Fit SAXS glassy-carbon absolute scale
+    requires_steps: [CP_intensity_calibration_fit, PD_intensity_calibration_reference_Q]
+    configuration:
+      with_processing_keys: [intensity_calibration_fit, intensity_calibration_reference]
+      signal_key: signal
+      independent_axis_key: Q
+      scale_output_key: absolute_intensity_scale_factor
+      scale_uncertainty_key: glassy_carbon_fit
+      fit_background: false
+      fit_model: lognormal
+      uncertainty_weight_key: combined
+      fit_min_val: 0.12
+      fit_max_val: 3.3
+      fit_val_units: 1/nm
+      require_overlap: true
+      interpolation_kind: linear
+      robust_loss: huber
+      robust_fscale: 1.0
+      use_basedata_weights: true
+      diagnostic_prefix: absolute_intensity_fit
+
+  AU:
+    module: MultiplyDatabundles
+    short_title: Apply glassy-carbon absolute intensity scale
+    requires_steps: [TH_sample, SF]
+    configuration:
+      with_processing_keys: [sample, intensity_calibration_fit]
+      multiplicand_data_key: signal
+      multiplier_data_key: absolute_intensity_scale_factor
 
   PL_IQ:
     module: Plot1DVisualization

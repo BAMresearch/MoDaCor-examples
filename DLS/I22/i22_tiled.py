@@ -7,7 +7,7 @@ from threading import Thread
 from time import monotonic, sleep
 from typing import Any
 
-from i22_helpers import DETECTOR_DATASETS, sample_aligned_paths
+from i22_helpers import DETECTOR_DATASETS, sample_aligned_paths, sample_static_paths
 
 
 def _nested_adapter(mapping: dict[str, Any]):
@@ -19,7 +19,7 @@ def _nested_adapter(mapping: dict[str, Any]):
 def _measurement_adapter(source_path: Path):
     from tiled.adapters.hdf5 import HDF5Adapter
 
-    paths = {"/modacor/calibration/absolute_intensity_factor"}
+    paths = set(sample_static_paths())
     for detector in DETECTOR_DATASETS:
         paths.update(sample_aligned_paths(detector))
     tree: dict[str, Any] = {}

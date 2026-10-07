@@ -57,13 +57,19 @@ referenced background has the same configuration number.
 
 ## Current validation status
 
-Using MoDaCor 1.8.0, MOUSE data and manifest verification passes, all ten
-sample/background pairs resolve to matching configurations, and the 42-step
-pipeline prepares. A complete runtime-server run processed all ten
+The recorded complete runtime-server validation used MoDaCor 1.8.0: MOUSE data
+and manifest verification passed, all ten sample/background pairs resolved to
+matching configurations, and the 42-step pipeline prepared. That pipeline YAML
+has since been migrated to the current development baseline's breaking
+`IndexByCoordinate`, generic `IndexedAverager`, and `photon_*` interfaces and
+prepares successfully. The recorded run processed all ten
 configurations successfully in approximately 30 seconds on the validation
 system. It produced 11 files below `work/output/`: ten configuration-specific
 `MOUSE_20260903_2_*_stacked_modacor_result.h5` files and
 `modacor_server.log`. Runtime will vary with the system and storage device.
+The complete ten-configuration run has not yet been repeated after the syntax
+migration.
+
 On 2026-09-22, the published archive was also downloaded through the manifest
 into a clean checkout; all 20 inputs passed size and SHA-256 verification.
 

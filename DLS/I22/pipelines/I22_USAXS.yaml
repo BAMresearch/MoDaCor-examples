@@ -1,0 +1,894 @@
+name: I22 USAXS correction pipeline
+description: >-
+  Dark-adjusted I22 Bonse--Hart USAXS processing. The sample source is one
+  preprocessed four-scan acquisition and the background source is scans
+  977724--977727. Diode and I0 readouts are normalized to their exposure
+  times explicitly. Transmission uses the full scan; the final scattering
+  curve uses the negative analyser wing. The dark-noise multipliers follow the
+  original I22 implementation; the high-gain front saturation threshold is
+  provisional and must be reviewed for new acquisitions.
+
+step_blocks:
+  prepare_diode:
+    # The dark-noise lower cutoffs reproduce maskingNoiseMultiplier from
+    # supplementary/usaxs_diamond_code/usaxsPipeline.py: front low/high 5/False
+    # and rear low/high 7/7. A zero multiplier leaves positive high-front data.
+    for_each:
+      SLF:
+        processing_key: SLF
+        signal_location: sample::/entry1/low_gain_front/signal
+        signal_units_location: sample::/entry1/low_gain_front/signal@units
+        uncertainties_sources:
+          subread_sem: sample::/entry1/low_gain_front/subread_sem
+          dark_offset_sem: sample::/entry1/low_gain_front/dark_offset_sem
+        dark_noise_location: sample::/entry1/low_gain_front/dark_noise_std
+        dark_noise_units_location: sample::/entry1/low_gain_front/dark_noise_std@units
+        yaw_location: sample::/entry1/low_gain_front/yaw
+        yaw_units_location: sample::/entry1/low_gain_front/yaw@units
+        count_time_location: sample::/entry1/low_gain_front/count_time
+        count_time_units_location: sample::/entry1/low_gain_front/count_time@units
+        upper_bound: null
+        noise_multiplier: 5
+      SLR:
+        processing_key: SLR
+        signal_location: sample::/entry1/low_gain_rear/signal
+        signal_units_location: sample::/entry1/low_gain_rear/signal@units
+        uncertainties_sources:
+          subread_sem: sample::/entry1/low_gain_rear/subread_sem
+          dark_offset_sem: sample::/entry1/low_gain_rear/dark_offset_sem
+        dark_noise_location: sample::/entry1/low_gain_rear/dark_noise_std
+        dark_noise_units_location: sample::/entry1/low_gain_rear/dark_noise_std@units
+        yaw_location: sample::/entry1/low_gain_rear/yaw
+        yaw_units_location: sample::/entry1/low_gain_rear/yaw@units
+        count_time_location: sample::/entry1/low_gain_rear/count_time
+        count_time_units_location: sample::/entry1/low_gain_rear/count_time@units
+        upper_bound: null
+        noise_multiplier: 7
+      SHF:
+        processing_key: SHF
+        signal_location: sample::/entry1/high_gain_front/signal
+        signal_units_location: sample::/entry1/high_gain_front/signal@units
+        uncertainties_sources:
+          subread_sem: sample::/entry1/high_gain_front/subread_sem
+          dark_offset_sem: sample::/entry1/high_gain_front/dark_offset_sem
+        dark_noise_location: sample::/entry1/high_gain_front/dark_noise_std
+        dark_noise_units_location: sample::/entry1/high_gain_front/dark_noise_std@units
+        yaw_location: sample::/entry1/high_gain_front/yaw
+        yaw_units_location: sample::/entry1/high_gain_front/yaw@units
+        count_time_location: sample::/entry1/high_gain_front/count_time
+        count_time_units_location: sample::/entry1/high_gain_front/count_time@units
+        upper_bound: 1.2e-7
+        noise_multiplier: 0
+      SHR:
+        processing_key: SHR
+        signal_location: sample::/entry1/high_gain_rear/signal
+        signal_units_location: sample::/entry1/high_gain_rear/signal@units
+        uncertainties_sources:
+          subread_sem: sample::/entry1/high_gain_rear/subread_sem
+          dark_offset_sem: sample::/entry1/high_gain_rear/dark_offset_sem
+        dark_noise_location: sample::/entry1/high_gain_rear/dark_noise_std
+        dark_noise_units_location: sample::/entry1/high_gain_rear/dark_noise_std@units
+        yaw_location: sample::/entry1/high_gain_rear/yaw
+        yaw_units_location: sample::/entry1/high_gain_rear/yaw@units
+        count_time_location: sample::/entry1/high_gain_rear/count_time
+        count_time_units_location: sample::/entry1/high_gain_rear/count_time@units
+        upper_bound: null
+        noise_multiplier: 7
+      BLF:
+        processing_key: BLF
+        signal_location: background::/entry1/low_gain_front/signal
+        signal_units_location: background::/entry1/low_gain_front/signal@units
+        uncertainties_sources:
+          subread_sem: background::/entry1/low_gain_front/subread_sem
+          dark_offset_sem: background::/entry1/low_gain_front/dark_offset_sem
+        dark_noise_location: background::/entry1/low_gain_front/dark_noise_std
+        dark_noise_units_location: background::/entry1/low_gain_front/dark_noise_std@units
+        yaw_location: background::/entry1/low_gain_front/yaw
+        yaw_units_location: background::/entry1/low_gain_front/yaw@units
+        count_time_location: background::/entry1/low_gain_front/count_time
+        count_time_units_location: background::/entry1/low_gain_front/count_time@units
+        upper_bound: null
+        noise_multiplier: 5
+      BLR:
+        processing_key: BLR
+        signal_location: background::/entry1/low_gain_rear/signal
+        signal_units_location: background::/entry1/low_gain_rear/signal@units
+        uncertainties_sources:
+          subread_sem: background::/entry1/low_gain_rear/subread_sem
+          dark_offset_sem: background::/entry1/low_gain_rear/dark_offset_sem
+        dark_noise_location: background::/entry1/low_gain_rear/dark_noise_std
+        dark_noise_units_location: background::/entry1/low_gain_rear/dark_noise_std@units
+        yaw_location: background::/entry1/low_gain_rear/yaw
+        yaw_units_location: background::/entry1/low_gain_rear/yaw@units
+        count_time_location: background::/entry1/low_gain_rear/count_time
+        count_time_units_location: background::/entry1/low_gain_rear/count_time@units
+        upper_bound: null
+        noise_multiplier: 7
+      BHF:
+        processing_key: BHF
+        signal_location: background::/entry1/high_gain_front/signal
+        signal_units_location: background::/entry1/high_gain_front/signal@units
+        uncertainties_sources:
+          subread_sem: background::/entry1/high_gain_front/subread_sem
+          dark_offset_sem: background::/entry1/high_gain_front/dark_offset_sem
+        dark_noise_location: background::/entry1/high_gain_front/dark_noise_std
+        dark_noise_units_location: background::/entry1/high_gain_front/dark_noise_std@units
+        yaw_location: background::/entry1/high_gain_front/yaw
+        yaw_units_location: background::/entry1/high_gain_front/yaw@units
+        count_time_location: background::/entry1/high_gain_front/count_time
+        count_time_units_location: background::/entry1/high_gain_front/count_time@units
+        upper_bound: 1.2e-7
+        noise_multiplier: 0
+      BHR:
+        processing_key: BHR
+        signal_location: background::/entry1/high_gain_rear/signal
+        signal_units_location: background::/entry1/high_gain_rear/signal@units
+        uncertainties_sources:
+          subread_sem: background::/entry1/high_gain_rear/subread_sem
+          dark_offset_sem: background::/entry1/high_gain_rear/dark_offset_sem
+        dark_noise_location: background::/entry1/high_gain_rear/dark_noise_std
+        dark_noise_units_location: background::/entry1/high_gain_rear/dark_noise_std@units
+        yaw_location: background::/entry1/high_gain_rear/yaw
+        yaw_units_location: background::/entry1/high_gain_rear/yaw@units
+        count_time_location: background::/entry1/high_gain_rear/count_time
+        count_time_units_location: background::/entry1/high_gain_rear/count_time@units
+        upper_bound: null
+        noise_multiplier: 7
+    steps:
+      load_signal:
+        module: AppendProcessingData
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: signal
+          signal_location: "${signal_location}"
+          units_location: "${signal_units_location}"
+          rank_of_data: 1
+          uncertainties_sources: "${uncertainties_sources}"
+      load_dark_noise:
+        module: AppendProcessingData
+        requires_steps: [.load_signal]
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: dark_noise_std
+          signal_location: "${dark_noise_location}"
+          units_location: "${dark_noise_units_location}"
+          rank_of_data: 1
+      load_yaw:
+        module: AppendProcessingData
+        requires_steps: [.load_dark_noise]
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: yaw
+          signal_location: "${yaw_location}"
+          units_location: "${yaw_units_location}"
+          rank_of_data: 1
+      range_mask:
+        module: ThresholdMask
+        requires_steps: [.load_yaw]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          source_basedata_key: signal
+          target_mask_key: Mask
+          lower_bound: 0
+          upper_bound: "${upper_bound}"
+          mask_mode: outside
+      copy_signal_to_dark_noise:
+        module: CopyDataBundleKeys
+        requires_steps: [.load_dark_noise]
+        configuration:
+          with_processing_keys: ["${processing_key}", "${processing_key}"]
+          key_map:
+            signal: signal_to_dark_noise
+          copy: true
+      calculate_signal_to_dark_noise:
+        module: DivideDatabundles
+        requires_steps: [.copy_signal_to_dark_noise]
+        configuration:
+          with_processing_keys: ["${processing_key}", "${processing_key}"]
+          dividend_data_key: signal_to_dark_noise
+          divisor_data_key: dark_noise_std
+      noise_mask:
+        module: ThresholdMask
+        requires_steps: [.calculate_signal_to_dark_noise]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          source_basedata_key: signal_to_dark_noise
+          target_mask_key: noise_mask
+          lower_bound: "${noise_multiplier}"
+          mask_mode: outside
+      combine_masks:
+        module: BitwiseOrMasks
+        requires_steps: [.range_mask, .noise_mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          target_mask_key: Mask
+          source_mask_keys: [noise_mask]
+      apply_mask:
+        module: ApplyMask
+        requires_steps: [.combine_masks]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          mask_key: Mask
+          basedata_to_mask: [signal]
+          masked_value: nan
+      normalize_time:
+        module: Divide
+        requires_steps: [.apply_mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          divisor_source: "${count_time_location}"
+          divisor_units_source: "${count_time_units_location}"
+
+  prepare_monitor:
+    for_each:
+      SLI0:
+        processing_key: SLI0
+        signal_location: sample::/entry1/low_gain_front/i0
+        units_location: sample::/entry1/low_gain_front/i0@units
+        uncertainty_location: sample::/entry1/low_gain_front/i0_subread_sem
+        count_time_location: sample::/entry1/low_gain_front/i0_count_time
+        count_time_units_location: sample::/entry1/low_gain_front/i0_count_time@units
+      SHI0:
+        processing_key: SHI0
+        signal_location: sample::/entry1/high_gain_front/i0
+        units_location: sample::/entry1/high_gain_front/i0@units
+        uncertainty_location: sample::/entry1/high_gain_front/i0_subread_sem
+        count_time_location: sample::/entry1/high_gain_front/i0_count_time
+        count_time_units_location: sample::/entry1/high_gain_front/i0_count_time@units
+      BLI0:
+        processing_key: BLI0
+        signal_location: background::/entry1/low_gain_front/i0
+        units_location: background::/entry1/low_gain_front/i0@units
+        uncertainty_location: background::/entry1/low_gain_front/i0_subread_sem
+        count_time_location: background::/entry1/low_gain_front/i0_count_time
+        count_time_units_location: background::/entry1/low_gain_front/i0_count_time@units
+      BHI0:
+        processing_key: BHI0
+        signal_location: background::/entry1/high_gain_front/i0
+        units_location: background::/entry1/high_gain_front/i0@units
+        uncertainty_location: background::/entry1/high_gain_front/i0_subread_sem
+        count_time_location: background::/entry1/high_gain_front/i0_count_time
+        count_time_units_location: background::/entry1/high_gain_front/i0_count_time@units
+    steps:
+      load:
+        module: AppendProcessingData
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: signal
+          signal_location: "${signal_location}"
+          units_location: "${units_location}"
+          rank_of_data: 1
+          uncertainties_sources:
+            i0_subread_sem: "${uncertainty_location}"
+      mask:
+        module: ThresholdMask
+        requires_steps: [.load]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          source_basedata_key: signal
+          target_mask_key: Mask
+          upper_bound: 0
+          mask_mode: inside
+      apply_mask:
+        module: ApplyMask
+        requires_steps: [.mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          mask_key: Mask
+          basedata_to_mask: [signal]
+          masked_value: nan
+      normalize_time:
+        module: Divide
+        requires_steps: [.apply_mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          divisor_source: "${count_time_location}"
+          divisor_units_source: "${count_time_units_location}"
+
+  normalize_flux:
+    for_each:
+      SLF: {diode: SLF, monitor: SLI0, requires: [prepare_diode.SLF.normalize_time, prepare_monitor.SLI0.normalize_time]}
+      SLR: {diode: SLR, monitor: SLI0, requires: [prepare_diode.SLR.normalize_time, prepare_monitor.SLI0.normalize_time]}
+      SHF: {diode: SHF, monitor: SHI0, requires: [prepare_diode.SHF.normalize_time, prepare_monitor.SHI0.normalize_time]}
+      SHR: {diode: SHR, monitor: SHI0, requires: [prepare_diode.SHR.normalize_time, prepare_monitor.SHI0.normalize_time]}
+      BLF: {diode: BLF, monitor: BLI0, requires: [prepare_diode.BLF.normalize_time, prepare_monitor.BLI0.normalize_time]}
+      BLR: {diode: BLR, monitor: BLI0, requires: [prepare_diode.BLR.normalize_time, prepare_monitor.BLI0.normalize_time]}
+      BHF: {diode: BHF, monitor: BHI0, requires: [prepare_diode.BHF.normalize_time, prepare_monitor.BHI0.normalize_time]}
+      BHR: {diode: BHR, monitor: BHI0, requires: [prepare_diode.BHR.normalize_time, prepare_monitor.BHI0.normalize_time]}
+    steps:
+      divide:
+        module: DivideDatabundles
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${diode}", "${monitor}"]
+          dividend_data_key: signal
+          divisor_data_key: signal
+
+  prepare_acquisition_center:
+    # The high-gain front diode saturates before a reliable high-gain
+    # front/rear overlap is available. Determine the rear/front response from
+    # the low-gain direct beam and apply that same response factor to both gains.
+    for_each:
+      S:
+        low_front: SLF
+        low_rear: SLR
+        high_front: SHF
+        high_rear: SHR
+        low_rear_work: S_center_low_rear
+        high_rear_work: S_center_high_rear
+        low_pool: SL_center_pool
+        high_pool: SH_center_pool
+        low_merged: SL_center
+        high_merged: SH_center
+        requires_low: [normalize_flux.SLF.divide, normalize_flux.SLR.divide]
+        requires_high: [normalize_flux.SHF.divide, normalize_flux.SHR.divide]
+      B:
+        low_front: BLF
+        low_rear: BLR
+        high_front: BHF
+        high_rear: BHR
+        low_rear_work: B_center_low_rear
+        high_rear_work: B_center_high_rear
+        low_pool: BL_center_pool
+        high_pool: BH_center_pool
+        low_merged: BL_center
+        high_merged: BH_center
+        requires_low: [normalize_flux.BLF.divide, normalize_flux.BLR.divide]
+        requires_high: [normalize_flux.BHF.divide, normalize_flux.BHR.divide]
+    steps:
+      copy_low_rear:
+        module: CopyDataBundleKeys
+        requires_steps: "${requires_low}"
+        configuration:
+          with_processing_keys: ["${low_rear_work}", "${low_rear}"]
+          data_keys: [signal, yaw]
+          copy: true
+      fit_low_rear_to_front:
+        module: FindScaleFactor1D
+        requires_steps: [.copy_low_rear]
+        configuration:
+          with_processing_keys: ["${low_rear_work}", "${low_front}"]
+          signal_key: signal
+          independent_axis_key: yaw
+          fit_model: lognormal
+          uncertainty_weight_key: subread_sem
+          fit_background: false
+          require_overlap: true
+          interpolation_kind: linear
+          use_basedata_weights: true
+          scale_output_key: diode_scale_factor
+          scale_uncertainty_key: diode_scale_fit
+          diagnostic_prefix: diode_fit
+      scale_low_rear:
+        module: MultiplyDatabundles
+        requires_steps: [.fit_low_rear_to_front]
+        configuration:
+          with_processing_keys: ["${low_rear_work}", "${low_rear_work}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: diode_scale_factor
+      pool_low:
+        module: ConcatenateDatabundles
+        requires_steps: [.scale_low_rear]
+        configuration:
+          with_processing_keys: ["${low_front}", "${low_rear_work}"]
+          data_keys: [signal, yaw]
+          output_processing_key: "${low_pool}"
+          sort_by: null
+          source_index_key: diode_index
+          source_position_key: pair_index
+          alignment_key: yaw
+          uncertainty_key_policy: fill_zero
+      average_low:
+        module: IndexedAverager
+        requires_steps: [.pool_low]
+        configuration:
+          with_processing_keys: ["${low_pool}"]
+          output_processing_key: "${low_merged}"
+          value_key: signal
+          index_key: pair_index
+          axis_key: yaw
+          mask_key: null
+          bin_id_key: point_index
+          use_value_weights: true
+          use_value_uncertainty_weights: true
+          uncertainty_weight_key: subread_sem
+          stats_keys: [signal, yaw]
+      center_low:
+        module: FindCenterOfMass1D
+        requires_steps: [.average_low]
+        configuration:
+          with_processing_keys: ["${low_merged}"]
+          signal_key: signal
+          axis_key: yaw
+          mask_key: null
+          half_width: 25
+          width_units: microradian
+          baseline: 0
+          maximum_iterations: 5
+          convergence_tolerance: 0.001
+          output_key: beam_center
+          diagnostic_prefix: centroid
+      copy_high_rear:
+        module: CopyDataBundleKeys
+        requires_steps: "${requires_high}"
+        configuration:
+          with_processing_keys: ["${high_rear_work}", "${high_rear}"]
+          data_keys: [signal, yaw]
+          copy: true
+      scale_high_rear:
+        module: MultiplyDatabundles
+        requires_steps: [.copy_high_rear, .fit_low_rear_to_front]
+        configuration:
+          with_processing_keys: ["${high_rear_work}", "${low_rear_work}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: diode_scale_factor
+      pool_high:
+        module: ConcatenateDatabundles
+        requires_steps: [.scale_high_rear]
+        configuration:
+          with_processing_keys: ["${high_front}", "${high_rear_work}"]
+          data_keys: [signal, yaw]
+          output_processing_key: "${high_pool}"
+          sort_by: null
+          source_index_key: diode_index
+          source_position_key: pair_index
+          alignment_key: yaw
+          uncertainty_key_policy: fill_zero
+      average_high:
+        module: IndexedAverager
+        requires_steps: [.pool_high]
+        configuration:
+          with_processing_keys: ["${high_pool}"]
+          output_processing_key: "${high_merged}"
+          value_key: signal
+          index_key: pair_index
+          axis_key: yaw
+          mask_key: null
+          bin_id_key: point_index
+          use_value_weights: true
+          use_value_uncertainty_weights: true
+          uncertainty_weight_key: subread_sem
+          stats_keys: [signal, yaw]
+      center_high:
+        module: FindCenterOfMass1D
+        requires_steps: [.average_high]
+        configuration:
+          with_processing_keys: ["${high_merged}"]
+          signal_key: signal
+          axis_key: yaw
+          mask_key: null
+          half_width: 25
+          width_units: microradian
+          baseline: 0
+          maximum_iterations: 5
+          convergence_tolerance: 0.001
+          output_key: beam_center
+          diagnostic_prefix: centroid
+
+  copy_center:
+    for_each:
+      SLF: {target: SLF, source: SL_center, requires: [prepare_acquisition_center.S.center_low]}
+      SLR: {target: SLR, source: SL_center, requires: [prepare_acquisition_center.S.center_low]}
+      SHF: {target: SHF, source: SH_center, requires: [prepare_acquisition_center.S.center_high]}
+      SHR: {target: SHR, source: SH_center, requires: [prepare_acquisition_center.S.center_high]}
+      BLF: {target: BLF, source: BL_center, requires: [prepare_acquisition_center.B.center_low]}
+      BLR: {target: BLR, source: BL_center, requires: [prepare_acquisition_center.B.center_low]}
+      BHF: {target: BHF, source: BH_center, requires: [prepare_acquisition_center.B.center_high]}
+      BHR: {target: BHR, source: BH_center, requires: [prepare_acquisition_center.B.center_high]}
+    steps:
+      copy:
+        module: CopyDataBundleKeys
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${target}", "${source}"]
+          data_keys: [beam_center]
+          copy: true
+
+  convert_q:
+    for_each:
+      SLF:
+        processing_key: SLF
+        photon_source: sample::/entry1/low_gain_front/energy
+        photon_units_source: sample::/entry1/low_gain_front/energy@units
+        requires: [copy_center.SLF.copy]
+      SLR:
+        processing_key: SLR
+        photon_source: sample::/entry1/low_gain_rear/energy
+        photon_units_source: sample::/entry1/low_gain_rear/energy@units
+        requires: [copy_center.SLR.copy]
+      SHF:
+        processing_key: SHF
+        photon_source: sample::/entry1/high_gain_front/energy
+        photon_units_source: sample::/entry1/high_gain_front/energy@units
+        requires: [copy_center.SHF.copy]
+      SHR:
+        processing_key: SHR
+        photon_source: sample::/entry1/high_gain_rear/energy
+        photon_units_source: sample::/entry1/high_gain_rear/energy@units
+        requires: [copy_center.SHR.copy]
+      BLF:
+        processing_key: BLF
+        photon_source: background::/entry1/low_gain_front/energy
+        photon_units_source: background::/entry1/low_gain_front/energy@units
+        requires: [copy_center.BLF.copy]
+      BLR:
+        processing_key: BLR
+        photon_source: background::/entry1/low_gain_rear/energy
+        photon_units_source: background::/entry1/low_gain_rear/energy@units
+        requires: [copy_center.BLR.copy]
+      BHF:
+        processing_key: BHF
+        photon_source: background::/entry1/high_gain_front/energy
+        photon_units_source: background::/entry1/high_gain_front/energy@units
+        requires: [copy_center.BHF.copy]
+      BHR:
+        processing_key: BHR
+        photon_source: background::/entry1/high_gain_rear/energy
+        photon_units_source: background::/entry1/high_gain_rear/energy@units
+        requires: [copy_center.BHR.copy]
+    steps:
+      q:
+        module: AngleToQ
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          angle_key: yaw
+          photon_source: "${photon_source}"
+          photon_units_source: "${photon_units_source}"
+          angle_convention: scattering_angle
+          center_key: beam_center
+          output_key: Q
+          output_units: 1/nm
+
+  combine_acquisition_diode_pairs:
+    # Refit the scientific rear/front response after centring, using only the
+    # low-gain direct-beam neighbourhood. Apply that same factor to both gains.
+    for_each:
+      S:
+        low_front: SLF
+        low_rear: SLR
+        high_front: SHF
+        high_rear: SHR
+        low_rear_work: S_science_low_rear
+        high_rear_work: S_science_high_rear
+        low_pool: SL_diode_pool
+        high_pool: SH_diode_pool
+        low_merged: SL
+        high_merged: SH
+        requires_low: [convert_q.SLF.q, convert_q.SLR.q]
+        requires_high: [convert_q.SHF.q, convert_q.SHR.q]
+      B:
+        low_front: BLF
+        low_rear: BLR
+        high_front: BHF
+        high_rear: BHR
+        low_rear_work: B_science_low_rear
+        high_rear_work: B_science_high_rear
+        low_pool: BL_diode_pool
+        high_pool: BH_diode_pool
+        low_merged: BL
+        high_merged: BH
+        requires_low: [convert_q.BLF.q, convert_q.BLR.q]
+        requires_high: [convert_q.BHF.q, convert_q.BHR.q]
+    steps:
+      copy_low_rear:
+        module: CopyDataBundleKeys
+        requires_steps: "${requires_low}"
+        configuration:
+          with_processing_keys: ["${low_rear_work}", "${low_rear}"]
+          data_keys: [signal, Q]
+          copy: true
+      fit_low_rear_to_front:
+        module: FindScaleFactor1D
+        requires_steps: [.copy_low_rear]
+        configuration:
+          with_processing_keys: ["${low_rear_work}", "${low_front}"]
+          signal_key: signal
+          independent_axis_key: Q
+          fit_model: lognormal
+          uncertainty_weight_key: subread_sem
+          fit_background: false
+          fit_min_val: -0.0008
+          fit_max_val: 0.0008
+          fit_val_units: 1/nm
+          require_overlap: true
+          interpolation_kind: linear
+          use_basedata_weights: true
+          scale_output_key: diode_scale_factor
+          scale_uncertainty_key: diode_scale_fit
+          diagnostic_prefix: diode_fit
+      scale_low_rear:
+        module: MultiplyDatabundles
+        requires_steps: [.fit_low_rear_to_front]
+        configuration:
+          with_processing_keys: ["${low_rear_work}", "${low_rear_work}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: diode_scale_factor
+      pool_low:
+        module: ConcatenateDatabundles
+        requires_steps: [.scale_low_rear]
+        configuration:
+          with_processing_keys: ["${low_front}", "${low_rear_work}"]
+          data_keys: [signal, Q]
+          output_processing_key: "${low_pool}"
+          sort_by: null
+          source_index_key: diode_index
+          source_position_key: pair_index
+          alignment_key: Q
+          uncertainty_key_policy: fill_zero
+      average_low:
+        module: IndexedAverager
+        requires_steps: [.pool_low]
+        configuration:
+          with_processing_keys: ["${low_pool}"]
+          output_processing_key: "${low_merged}"
+          value_key: signal
+          index_key: pair_index
+          axis_key: Q
+          mask_key: null
+          bin_id_key: point_index
+          use_value_weights: true
+          use_value_uncertainty_weights: true
+          uncertainty_weight_key: subread_sem
+          stats_keys: [signal, Q]
+      copy_high_rear:
+        module: CopyDataBundleKeys
+        requires_steps: "${requires_high}"
+        configuration:
+          with_processing_keys: ["${high_rear_work}", "${high_rear}"]
+          data_keys: [signal, Q]
+          copy: true
+      scale_high_rear:
+        module: MultiplyDatabundles
+        requires_steps: [.copy_high_rear, .fit_low_rear_to_front]
+        configuration:
+          with_processing_keys: ["${high_rear_work}", "${low_rear_work}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: diode_scale_factor
+      pool_high:
+        module: ConcatenateDatabundles
+        requires_steps: [.scale_high_rear]
+        configuration:
+          with_processing_keys: ["${high_front}", "${high_rear_work}"]
+          data_keys: [signal, Q]
+          output_processing_key: "${high_pool}"
+          sort_by: null
+          source_index_key: diode_index
+          source_position_key: pair_index
+          alignment_key: Q
+          uncertainty_key_policy: fill_zero
+      average_high:
+        module: IndexedAverager
+        requires_steps: [.pool_high]
+        configuration:
+          with_processing_keys: ["${high_pool}"]
+          output_processing_key: "${high_merged}"
+          value_key: signal
+          index_key: pair_index
+          axis_key: Q
+          mask_key: null
+          bin_id_key: point_index
+          use_value_weights: true
+          use_value_uncertainty_weights: true
+          uncertainty_weight_key: subread_sem
+          stats_keys: [signal, Q]
+
+  scale_gain:
+    # Fit each acquisition internally. No sample/background response fit is made.
+    for_each:
+      S: {high: SH, low: SL, requires: [combine_acquisition_diode_pairs.S.average_high, combine_acquisition_diode_pairs.S.average_low]}
+      B: {high: BH, low: BL, requires: [combine_acquisition_diode_pairs.B.average_high, combine_acquisition_diode_pairs.B.average_low]}
+    steps:
+      fit:
+        module: FindScaleFactor1D
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${high}", "${low}"]
+          signal_key: signal
+          independent_axis_key: Q
+          fit_model: lognormal
+          uncertainty_weight_key: subread_sem
+          fit_background: false
+          fit_min_val: -0.005
+          fit_max_val: -0.002
+          fit_val_units: 1/nm
+          require_overlap: true
+          interpolation_kind: linear
+          use_basedata_weights: true
+          scale_output_key: gain_scale_factor
+          scale_uncertainty_key: gain_scale_fit
+          diagnostic_prefix: gain_fit
+      apply:
+        module: MultiplyDatabundles
+        requires_steps: [.fit]
+        configuration:
+          with_processing_keys: ["${high}", "${high}"]
+          multiplicand_data_key: signal
+          multiplier_data_key: gain_scale_factor
+
+  merge_acquisition:
+    for_each:
+      sample:
+        low: SL
+        high: SH
+        pooled: sample_gain_pool
+        merged: sample_merged
+        requires: [combine_acquisition_diode_pairs.S.average_low, scale_gain.S.apply]
+      background:
+        low: BL
+        high: BH
+        pooled: background_gain_pool
+        merged: background_merged
+        requires: [combine_acquisition_diode_pairs.B.average_low, scale_gain.B.apply]
+    steps:
+      pool:
+        module: ConcatenateDatabundles
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${low}", "${high}"]
+          data_keys: [signal, Q]
+          output_processing_key: "${pooled}"
+          sort_by: null
+          source_index_key: gain_index
+          uncertainty_key_policy: fill_zero
+      index:
+        module: IndexByCoordinate
+        requires_steps: [.pool]
+        configuration:
+          with_processing_keys: ["${pooled}"]
+          coordinate_key: Q
+          index_key: merge_bin_index
+          edges_key: merge_bin_edges
+          bin_min: -0.04
+          bin_max: 0.04
+          bin_units: 1/nm
+          n_bins: 20000
+          spacing: linear
+      average:
+        module: IndexedAverager
+        requires_steps: [.index]
+        configuration:
+          with_processing_keys: ["${pooled}"]
+          output_processing_key: "${merged}"
+          value_key: signal
+          index_key: merge_bin_index
+          axis_key: Q
+          mask_key: null
+          bin_id_key: merge_bin_id
+          use_value_weights: true
+          use_value_uncertainty_weights: true
+          uncertainty_weight_key: subread_sem
+          stats_keys: [signal, Q]
+
+  integrate_transmission:
+    for_each:
+      sample: {processing_key: sample_merged, output_key: sample_integral, requires: [merge_acquisition.sample.average]}
+      background: {processing_key: background_merged, output_key: background_integral, requires: [merge_acquisition.background.average]}
+    steps:
+      integrate:
+        module: Integrate1D
+        requires_steps: "${requires}"
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          signal_key: signal
+          axis_key: Q
+          mask_key: null
+          method: trapezoid
+          sort_axis: true
+          duplicate_axis: error
+          output_processing_keys: ["${output_key}"]
+
+steps:
+  COPY_TRANSMISSION:
+    module: CopyDataBundleKeys
+    short_title: Preserve merged sample integral as transmission numerator
+    requires_steps: [integrate_transmission.sample.integrate]
+    configuration:
+      with_processing_keys: [transmission_factor, sample_integral]
+      data_keys: [signal]
+      copy: true
+  TRANSMISSION:
+    module: DivideDatabundles
+    short_title: Determine merged sample/background transmission
+    requires_steps: [COPY_TRANSMISSION, integrate_transmission.background.integrate]
+    configuration:
+      with_processing_keys: [transmission_factor, background_integral]
+      dividend_data_key: signal
+      divisor_data_key: signal
+  NORMALIZE_TRANSMISSION:
+    module: DivideDatabundles
+    short_title: Normalize merged sample by transmission
+    requires_steps: [TRANSMISSION, merge_acquisition.sample.average]
+    configuration:
+      with_processing_keys: [sample_merged, transmission_factor]
+      dividend_data_key: signal
+      divisor_data_key: signal
+  SUBTRACT_BACKGROUND:
+    module: SubtractInterpolated1D
+    short_title: Remap and subtract merged background
+    requires_steps: [NORMALIZE_TRANSMISSION, merge_acquisition.background.average]
+    configuration:
+      with_processing_keys: [sample_merged, background_merged]
+      signal_key: signal
+      axis_key: Q
+      mask_key: null
+      mode: nearest
+      output_signal_key: signal
+      output_mask_key: remap_mask
+  PRESERVE_WINGS:
+    module: CopyDataBundleKeys
+    requires_steps: [SUBTRACT_BACKGROUND]
+    configuration:
+      with_processing_keys: [sample_merged, sample_merged]
+      key_map:
+        signal: both_wings_signal
+        Q: signed_Q
+  SELECT_NEGATIVE:
+    module: ThresholdMask
+    requires_steps: [PRESERVE_WINGS]
+    configuration:
+      with_processing_keys: [sample_merged]
+      source_basedata_key: Q
+      target_mask_key: wing_mask
+      lower_bound: 0
+      mask_mode: inside
+  COMBINE_FINAL_MASKS:
+    module: BitwiseOrMasks
+    requires_steps: [SELECT_NEGATIVE]
+    configuration:
+      with_processing_keys: [sample_merged]
+      target_mask_key: remap_mask
+      source_mask_keys: [wing_mask]
+  APPLY_FINAL_MASK:
+    module: ApplyMask
+    requires_steps: [COMBINE_FINAL_MASKS]
+    configuration:
+      with_processing_keys: [sample_merged]
+      mask_key: remap_mask
+      basedata_to_mask: [signal]
+      masked_value: nan
+  POSITIVE_Q:
+    module: Negate
+    requires_steps: [APPLY_FINAL_MASK]
+    configuration:
+      with_processing_keys: [sample_merged]
+      data_key: Q
+  FINAL_COPY:
+    module: CopyDataBundleKeys
+    requires_steps: [POSITIVE_Q]
+    configuration:
+      with_processing_keys: [pooled, sample_merged]
+      key_map:
+        signal: signal
+        Q: Q
+        remap_mask: Mask
+      copy: true
+  IP:
+    module: IndexByCoordinate
+    short_title: Index corrected merged USAXS points
+    requires_steps: [FINAL_COPY]
+    configuration:
+      with_processing_keys: [pooled]
+      coordinate_key: Q
+      index_key: bin_index
+      edges_key: bin_edges
+      bin_min: 0.002
+      bin_max: 0.04
+      bin_units: 1/nm
+      n_bins: 400
+      spacing: log
+  AV:
+    module: IndexedAverager
+    short_title: Average corrected merged USAXS points at actual mean Q
+    requires_steps: [IP]
+    configuration:
+      with_processing_keys: [pooled]
+      value_key: signal
+      index_key: bin_index
+      axis_key: Q
+      mask_key: Mask
+      bin_id_key: bin_id
+      use_value_weights: true
+      use_value_uncertainty_weights: true
+      uncertainty_weight_key: subread_sem
+      stats_keys: [signal, Q]
