@@ -44,7 +44,7 @@ The foil ROI is stored as a detector count rate, so dividing the scattering
 count rate by the transmitted count rate yields a dimensionless response
 without an artificial unit-label change.
 
-`pipelines/SAXSess_I_N008_absolute.yaml` then applies:
+`pipelines/SAXSess_liquids_solids.yaml` then applies:
 
 1. Poisson uncertainties, exposure-time normalization, dark-current
    subtraction, and direct transmitted-beam normalization;

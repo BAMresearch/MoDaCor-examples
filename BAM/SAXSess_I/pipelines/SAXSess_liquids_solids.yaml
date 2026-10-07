@@ -1,4 +1,4 @@
-name: saxsess_i_n008_absolute
+name: saxsess_liquids_solids
 # Recommended physical-correction pipeline for the liquid N008 reference set.
 # It produces Q in 1/nm and absolute intensity in 1/(m sr). The supplied
 # water-reference PDH is a legacy SAXSQuant calibration profile: 1.641 1/(m sr)
