@@ -16,6 +16,46 @@
   },
   "files": [
     {
+      "path": "data/Data for your Glassy Carbon L sample.txt",
+      "size_bytes": 2050,
+      "sha256": "3d2a0a81581253b4d8b8c346471c6763070c6d9891497a17d3f6b81cbae2c6fe"
+    },
+    {
+      "path": "data/Glassy Carbon L average.dat",
+      "size_bytes": 11555,
+      "sha256": "11681cb967e0b2f4d58b3d28a5df8e7e067b89054f035f2727de172e69590f77"
+    },
+    {
+      "path": "data/i22-966700-I0.h5",
+      "size_bytes": 116893,
+      "sha256": "b95afd219fb84b975e6b1c8104b1df66636c0781bad443adddcd2f5b5e30c231"
+    },
+    {
+      "path": "data/i22-966700-Pilatus2M_SAXS.h5",
+      "size_bytes": 2277929,
+      "sha256": "db0685ee56481d9d2da4722c0dd3e36ce49501de5fb83be8a94f2c4ab24c6497"
+    },
+    {
+      "path": "data/i22-966700-Pilatus2M_WAXS.h5",
+      "size_bytes": 2238023,
+      "sha256": "fe5de448b46c7786dc4782320833fa76d370169b4b4cb444153757fc86c14732"
+    },
+    {
+      "path": "data/i22-966700-bsdiodes.h5",
+      "size_bytes": 116893,
+      "sha256": "1baefd7e8b9a147765aa35a39fe7a3ec22812fd41b80ab367d68d8a6687e3c78"
+    },
+    {
+      "path": "data/i22-966700-user_tetramm.h5",
+      "size_bytes": 116893,
+      "sha256": "489f6a8db5ba3a5853855b83a9d6e762129aa9fa0b2ae94b574619664f824b55"
+    },
+    {
+      "path": "data/i22-966700.nxs",
+      "size_bytes": 829680,
+      "sha256": "d626ed4f258195c9e21516b18f4e1f4e6632b294bd1f345695e7d539907c958f"
+    },
+    {
       "path": "data/i22-977723-I0.h5",
       "size_bytes": 1897776,
       "sha256": "4604352960360f1c7f0895c2c64333595503aa33ed41467533cfaa44d0fa6a08"

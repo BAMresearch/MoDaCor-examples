@@ -1,0 +1,545 @@
+name: I22 combined SAXS/WAXS solids operando
+description: >-
+  Combined I22 SAXS/WAXS correction pipeline for measurements made with the
+  special nosecone without an aluminium attenuator. Repeated detector work is
+  authored as for-each lanes: five frame-normalization lanes, two geometry
+  lanes, three detector-correction lanes, and two final sample-integration
+  lanes. SAXS and WAXS use the same measurement transmission, incident I0,
+  specimen thickness, physical-correction parameters, and absolute scale while
+  remaining separate until their corrected 1D curves are concatenated and
+  Q-sorted. SAXS measurement 966700 follows the same correction path, is
+  normalized by its known 1.0 mm thickness, and is fitted over the conservative
+  low-q range of the Glassy Carbon L reference. The SAXS-derived dimensionless
+  factor is applied unchanged to SAXS and WAXS; the WAXS glassy-carbon curve is
+  intentionally not fitted because the desmeared USAXS reference is not
+  considered authoritative at high q. I0 is an incident count rate in count/s,
+  so count-time and I0 normalization cancel the detector count/time dimensions.
+
+step_blocks:
+  normalize_frames:
+    for_each:
+      saxs_sample:
+        processing_key: sample
+        signal_location: sample::/entry1/detector/data
+        count_time_source: sample::/modacor/normalization/saxs_count_time
+        count_time_units_source: sample::/modacor/normalization/saxs_count_time@units
+        transmission_source: sample::/entry1/sample/transmission
+        transmission_units_source: sample::/entry1/sample/transmission@units
+        transmission_sem_source: sample::/entry1/sample/transmission_sem
+        i0_source: sample::/modacor/normalization/i0_channel_1_mean
+        i0_units_source: sample::/modacor/normalization/i0_channel_1_mean@units
+        i0_sem_source: sample::/modacor/normalization/i0_channel_1_sem
+      waxs_sample:
+        processing_key: waxs_sample
+        signal_location: sample::/entry1/Pilatus2M_WAXS/data
+        count_time_source: sample::/modacor/normalization/waxs_count_time
+        count_time_units_source: sample::/modacor/normalization/waxs_count_time@units
+        transmission_source: sample::/entry1/sample/transmission
+        transmission_units_source: sample::/entry1/sample/transmission@units
+        transmission_sem_source: sample::/entry1/sample/transmission_sem
+        i0_source: sample::/modacor/normalization/i0_channel_1_mean
+        i0_units_source: sample::/modacor/normalization/i0_channel_1_mean@units
+        i0_sem_source: sample::/modacor/normalization/i0_channel_1_sem
+      saxs_background:
+        processing_key: background
+        signal_location: background::/entry1/detector/data
+        count_time_source: background::/modacor/normalization/saxs_count_time
+        count_time_units_source: background::/modacor/normalization/saxs_count_time@units
+        transmission_source: background::/entry1/sample/transmission
+        transmission_units_source: background::/entry1/sample/transmission@units
+        transmission_sem_source: background::/entry1/sample/transmission_sem
+        i0_source: background::/modacor/normalization/i0_channel_1_mean
+        i0_units_source: background::/modacor/normalization/i0_channel_1_mean@units
+        i0_sem_source: background::/modacor/normalization/i0_channel_1_sem
+      waxs_background:
+        processing_key: waxs_background
+        signal_location: background::/entry1/Pilatus2M_WAXS/data
+        count_time_source: background::/modacor/normalization/waxs_count_time
+        count_time_units_source: background::/modacor/normalization/waxs_count_time@units
+        transmission_source: background::/entry1/sample/transmission
+        transmission_units_source: background::/entry1/sample/transmission@units
+        transmission_sem_source: background::/entry1/sample/transmission_sem
+        i0_source: background::/modacor/normalization/i0_channel_1_mean
+        i0_units_source: background::/modacor/normalization/i0_channel_1_mean@units
+        i0_sem_source: background::/modacor/normalization/i0_channel_1_sem
+      saxs_glassy_carbon:
+        processing_key: intensity_calibration
+        signal_location: intensity_calibration::/entry1/detector/data
+        count_time_source: intensity_calibration::/modacor/normalization/saxs_count_time
+        count_time_units_source: intensity_calibration::/modacor/normalization/saxs_count_time@units
+        transmission_source: intensity_calibration::/entry1/sample/transmission
+        transmission_units_source: intensity_calibration::/entry1/sample/transmission@units
+        transmission_sem_source: intensity_calibration::/entry1/sample/transmission_sem
+        i0_source: intensity_calibration::/modacor/normalization/i0_channel_1_mean
+        i0_units_source: intensity_calibration::/modacor/normalization/i0_channel_1_mean@units
+        i0_sem_source: intensity_calibration::/modacor/normalization/i0_channel_1_sem
+    steps:
+      load:
+        module: AppendProcessingData
+        short_title: Load detector frames
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: signal
+          signal_location: "${signal_location}"
+          units_override: count
+          rank_of_data: 2
+      raw_mask:
+        module: ThresholdMask
+        short_title: Raw-count validity mask
+        requires_steps: [.load]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          source_basedata_key: signal
+          target_mask_key: raw_count_mask
+          lower_bound: 0.0
+          upper_bound: 10000000.0
+          mask_mode: outside
+      poisson:
+        module: PoissonUncertainties
+        short_title: Poisson uncertainties
+        requires_steps: [.raw_mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+      normalize_time:
+        module: Divide
+        short_title: Count-time normalization
+        requires_steps: [.poisson]
+        configuration:
+          divisor_source: "${count_time_source}"
+          divisor_units_source: "${count_time_units_source}"
+          with_processing_keys: ["${processing_key}"]
+      normalize_transmission:
+        module: Divide
+        short_title: Transmission normalization
+        requires_steps: [.normalize_time]
+        configuration:
+          divisor_source: "${transmission_source}"
+          divisor_units_source: "${transmission_units_source}"
+          divisor_uncertainties_sources:
+            transmission_SEM: "${transmission_sem_source}"
+          with_processing_keys: ["${processing_key}"]
+      normalize_flux:
+        module: Divide
+        short_title: Incident I0 flux normalization
+        requires_steps: [.normalize_transmission]
+        configuration:
+          divisor_source: "${i0_source}"
+          divisor_units_source: "${i0_units_source}"
+          divisor_uncertainties_sources:
+            I0_SEM: "${i0_sem_source}"
+          with_processing_keys: ["${processing_key}"]
+      average_frames:
+        module: ReduceDimensionality
+        short_title: Average detector frames
+        requires_steps: [.normalize_flux]
+        configuration:
+          axes: [0, 1]
+          use_weights: true
+          nan_policy: propagate
+          reduction: mean
+          with_processing_keys: ["${processing_key}"]
+      reduce_raw_mask:
+        module: ReduceMask
+        short_title: Collapse raw-count mask
+        requires_steps: [.average_frames]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          source_mask_key: raw_count_mask
+          target_mask_key: raw_count_mask
+          axes: [0, 1]
+          reduction: any
+
+  detector_geometry:
+    for_each:
+      saxs:
+        processing_key: static
+        signal_location: saxs_calibration::/entry1/calibration_data/data
+        mask_location: saxs_mask::/entry/mask/mask
+        detector_frame:
+          type: nexus
+          source: saxs_calibration
+          detector_path: /entry1/instrument/detector
+          module_origin: first_pixel_center
+        photon_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
+        photon_units_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
+        bin_min: 0.03
+        bin_max: 3.36
+        spacing: log
+        n_bins: 500
+      waxs:
+        processing_key: waxs_static
+        signal_location: waxs_calibration::/entry1/calibration_data/data
+        mask_location: waxs_mask::/entry/mask/mask
+        detector_frame:
+          type: nexus
+          source: waxs_calibration
+          detector_path: /entry1/instrument/detector
+          module_origin: first_pixel_center
+        photon_source: waxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
+        photon_units_source: waxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
+        bin_min: 4.4241476418082226
+        bin_max: 54.71698841709772
+        spacing: linear
+        n_bins: 1502
+    steps:
+      load_shape:
+        module: AppendProcessingData
+        short_title: Load detector calibration shape
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: signal
+          signal_location: "${signal_location}"
+          units_override: count
+          rank_of_data: 2
+      load_mask:
+        module: AppendProcessingData
+        short_title: Load detector mask
+        configuration:
+          processing_key: "${processing_key}"
+          databundle_output_key: mask
+          signal_location: "${mask_location}"
+          units_override: dimensionless
+          rank_of_data: 2
+      pixel_coordinates:
+        module: PixelCoordinates3D
+        short_title: Pixel coordinates
+        requires_steps: [.load_shape]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          detector_frame: "${detector_frame}"
+      scattering_geometry:
+        module: XSGeometryFromPixelCoordinates
+        short_title: Scattering geometry
+        requires_steps: [.pixel_coordinates]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          detector_frame: "${detector_frame}"
+          sample_z_override:
+            value: 0.0
+            units: mm
+          photon_source: "${photon_source}"
+          photon_units_source: "${photon_units_source}"
+      index_pixels:
+        module: IndexByCoordinate
+        short_title: Index detector pixels
+        requires_steps: [.scattering_geometry]
+        configuration:
+          coordinate_key: Q
+          bin_min: "${bin_min}"
+          bin_max: "${bin_max}"
+          bin_units: 1/nm
+          spacing: "${spacing}"
+          n_bins: "${n_bins}"
+          with_processing_keys: ["${processing_key}"]
+
+  correct_detector:
+    for_each:
+      saxs:
+        processing_key: sample
+        background_key: background
+        static_key: static
+        normalized_requires:
+          [normalize_frames.saxs_sample.reduce_raw_mask, normalize_frames.saxs_background.reduce_raw_mask]
+        map_requires:
+          [correct_detector.saxs.subtract_background, detector_geometry.saxs.index_pixels, detector_geometry.saxs.load_mask]
+        wavelength_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
+        wavelength_units_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
+      waxs:
+        processing_key: waxs_sample
+        background_key: waxs_background
+        static_key: waxs_static
+        normalized_requires:
+          [normalize_frames.waxs_sample.reduce_raw_mask, normalize_frames.waxs_background.reduce_raw_mask]
+        map_requires:
+          [correct_detector.waxs.subtract_background, detector_geometry.waxs.index_pixels, detector_geometry.waxs.load_mask]
+        wavelength_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
+        wavelength_units_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
+      saxs_glassy_carbon:
+        processing_key: intensity_calibration
+        background_key: background
+        static_key: static
+        normalized_requires:
+          [normalize_frames.saxs_glassy_carbon.reduce_raw_mask, normalize_frames.saxs_background.reduce_raw_mask]
+        map_requires:
+          [correct_detector.saxs_glassy_carbon.subtract_background, detector_geometry.saxs.index_pixels, detector_geometry.saxs.load_mask]
+        wavelength_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength
+        wavelength_units_source: saxs_calibration::/entry1/calibration_sample/beam/incident_wavelength@units
+    steps:
+      subtract_background:
+        module: SubtractDatabundles
+        short_title: Subtract corrected background
+        requires_steps: "${normalized_requires}"
+        configuration:
+          with_processing_keys: ["${processing_key}", "${background_key}"]
+      attach_maps:
+        module: CopyDataBundleKeys
+        short_title: Attach detector maps
+        requires_steps: "${map_requires}"
+        configuration:
+          with_processing_keys: ["${processing_key}", "${static_key}"]
+          data_keys: [mask, Q, Psi, TwoTheta, CosAlpha, Omega, bin_index]
+          copy: false
+      dilate_mask:
+        module: DilateMask
+        short_title: Dilate detector mask
+        requires_steps: [.attach_maps]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          source_mask_key: mask
+          target_mask_key: mask
+          radius: 1
+          footprint_shape: square
+      attach_background_mask:
+        module: CopyDataBundleKeys
+        short_title: Attach background raw mask
+        requires_steps: [.subtract_background]
+        configuration:
+          with_processing_keys: ["${processing_key}", "${background_key}"]
+          key_map:
+            raw_count_mask: background_raw_count_mask
+          copy: false
+      combine_masks:
+        module: BitwiseOrMasks
+        short_title: Combine detector masks
+        requires_steps: [.dilate_mask, .attach_background_mask]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          target_mask_key: mask
+          source_mask_keys: [raw_count_mask, background_raw_count_mask]
+      solid_angle:
+        module: SolidAngleCorrection
+        short_title: Solid-angle correction
+        requires_steps: [.combine_masks]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+      detector_efficiency:
+        module: DetectorEfficiencyCorrection
+        short_title: Silicon-detector efficiency correction
+        requires_steps: [.solid_angle]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          material: Si
+          density: 2.33
+          density_units: g/cm^3
+          thickness: 0.32
+          thickness_units: mm
+          # DAWN/I22 configuration: both detectors see the same wavelength.
+          wavelength_source: "${wavelength_source}"
+          wavelength_units_source: "${wavelength_units_source}"
+          normalize_to_normal_incidence: true
+      polarization:
+        module: PolarizationCorrection
+        short_title: Polarization correction
+        requires_steps: [.detector_efficiency]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          mode: linear_fraction
+          polarization_factor: 0.9
+          polarization_angular_offset: 0.0
+          polarization_angular_offset_units: degree
+
+  integrate_sample:
+    for_each:
+      saxs:
+        processing_key: sample
+        polarization_step: correct_detector.saxs.polarization
+        plot_target: plots::saxs-2d
+        data_path: /sample/signal/signal
+        plot_title: SAXS corrected 2D detector image
+        sink_target: result_hdf::after_plot_2d
+        sink_data_paths: [/sample]
+      waxs:
+        processing_key: waxs_sample
+        polarization_step: correct_detector.waxs.polarization
+        plot_target: plots::waxs-2d
+        data_path: /waxs_sample/signal/signal
+        plot_title: WAXS corrected 2D detector image
+        sink_target: result_hdf::after_plot_waxs_2d
+        sink_data_paths: [/waxs_sample]
+    steps:
+      plot_2d:
+        module: Plot2DVisualization
+        short_title: Live corrected 2D detector image
+        requires_steps: ["${polarization_step}"]
+        configuration:
+          target: "${plot_target}"
+          data_path: "${data_path}"
+          title: "${plot_title}"
+          colormap: Viridis
+      save_2d:
+        module: SinkProcessingData
+        short_title: Save corrected 2D detector image
+        requires_steps: ["${polarization_step}"]
+        configuration:
+          target: "${sink_target}"
+          data_paths: "${sink_data_paths}"
+      azimuthal_average:
+        module: IndexedAverager
+        short_title: Azimuthal integration
+        requires_steps: [.plot_2d, .save_2d]
+        configuration:
+          value_key: signal
+          index_key: bin_index
+          axis_key: Q
+          mask_key: mask
+          use_value_weights: true
+          use_value_uncertainty_weights: false
+          uncertainty_weight_key: null
+          with_processing_keys: ["${processing_key}"]
+      combine_uncertainties:
+        module: CombineUncertaintiesMax
+        short_title: Combine 1D uncertainties
+        requires_steps: [.azimuthal_average]
+        configuration:
+          with_processing_keys: ["${processing_key}"]
+          target_basedata_key: signal
+          combinations:
+            combined: [Poisson, SEM]
+          ignore_missing: true
+      normalize_thickness:
+        module: Divide
+        short_title: Normalize by sample thickness
+        requires_steps: [.combine_uncertainties]
+        configuration:
+          divisor_source: sample::/entry1/sample/thickness
+          divisor_units_source: sample::/entry1/sample/thickness@units
+          with_processing_keys: ["${processing_key}"]
+      apply_absolute_scale:
+        module: MultiplyDatabundles
+        short_title: Apply shared glassy-carbon scale
+        requires_steps: [.normalize_thickness, SF]
+        configuration:
+          with_processing_keys: ["${processing_key}", intensity_calibration_fit]
+          multiplicand_data_key: signal
+          multiplier_data_key: absolute_intensity_scale_factor
+
+steps:
+  PD_intensity_calibration_reference_I:
+    module: AppendProcessingData
+    short_title: Load glassy-carbon reference intensity
+    requires_steps: []
+    configuration:
+      processing_key: intensity_calibration_reference
+      databundle_output_key: signal
+      signal_location: intensity_calibration_reference::I
+      units_override: 1/(cm*sr)
+      uncertainties_sources:
+        combined: intensity_calibration_reference::I_sigma
+      rank_of_data: 1
+
+  PD_intensity_calibration_reference_Q:
+    module: AppendProcessingData
+    short_title: Load glassy-carbon reference Q
+    requires_steps: [PD_intensity_calibration_reference_I]
+    configuration:
+      processing_key: intensity_calibration_reference
+      databundle_output_key: Q
+      signal_location: intensity_calibration_reference::Q
+      units_override: 1/angstrom
+      rank_of_data: 1
+
+  AV_intensity_calibration:
+    module: IndexedAverager
+    short_title: Glassy-carbon SAXS azimuthal integration
+    requires_steps: [correct_detector.saxs_glassy_carbon.polarization]
+    configuration:
+      value_key: signal
+      index_key: bin_index
+      axis_key: Q
+      mask_key: mask
+      use_value_weights: true
+      use_value_uncertainty_weights: false
+      uncertainty_weight_key: null
+      with_processing_keys: [intensity_calibration]
+
+  CU_intensity_calibration:
+    module: CombineUncertaintiesMax
+    short_title: Combine glassy-carbon SAXS uncertainties
+    requires_steps: [AV_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration]
+      target_basedata_key: signal
+      combinations:
+        combined: [Poisson, SEM]
+      ignore_missing: true
+
+  TH_intensity_calibration:
+    module: Divide
+    short_title: Normalize glassy carbon by its 1.0 mm thickness
+    requires_steps: [CU_intensity_calibration]
+    configuration:
+      divisor_source: intensity_calibration::/entry1/sample/thickness
+      divisor_units_source: intensity_calibration::/entry1/sample/thickness@units
+      with_processing_keys: [intensity_calibration]
+
+  CP_intensity_calibration_fit:
+    module: CopyDataBundleKeys
+    short_title: Copy glassy-carbon curve for absolute-scale fitting
+    requires_steps: [TH_intensity_calibration]
+    configuration:
+      with_processing_keys: [intensity_calibration_fit, intensity_calibration]
+      data_keys: [signal, Q]
+      copy: true
+
+  SF:
+    module: FindScaleFactor1D
+    short_title: Fit SAXS glassy-carbon absolute scale
+    requires_steps: [CP_intensity_calibration_fit, PD_intensity_calibration_reference_Q]
+    configuration:
+      with_processing_keys: [intensity_calibration_fit, intensity_calibration_reference]
+      signal_key: signal
+      independent_axis_key: Q
+      scale_output_key: absolute_intensity_scale_factor
+      scale_uncertainty_key: glassy_carbon_fit
+      fit_background: false
+      fit_model: lognormal
+      uncertainty_weight_key: combined
+      fit_min_val: 0.12
+      # Avoid the less-certain high-q tail of the desmeared APS USAXS curve.
+      fit_max_val: 2.0
+      fit_val_units: 1/nm
+      require_overlap: true
+      interpolation_kind: linear
+      robust_loss: huber
+      robust_fscale: 1.0
+      use_basedata_weights: true
+      diagnostic_prefix: absolute_intensity_fit
+
+  CAT_IQ:
+    module: ConcatenateDatabundles
+    short_title: Combine SAXS and WAXS I(Q)
+    requires_steps:
+      [integrate_sample.saxs.apply_absolute_scale, integrate_sample.waxs.apply_absolute_scale]
+    configuration:
+      with_processing_keys: [sample, waxs_sample]
+      data_keys: [signal, Q]
+      output_processing_key: saxs_waxs_1d
+      sort_by: Q
+      source_index_key: detector_index
+      uncertainty_key_policy: require_matching
+
+  PL_IQ:
+    module: Plot1DVisualization
+    short_title: Live combined SAXS/WAXS I(Q) plot
+    requires_steps: [CAT_IQ]
+    configuration:
+      target: plots::saxs-waxs-1d
+      x_path: /saxs_waxs_1d/Q/signal
+      y_path: /saxs_waxs_1d/signal/signal
+      x_units: 1/nm
+      x_axis_type: log
+      y_axis_type: log
+      error_bar_thickness: 2.0
+      error_bar_opacity: 0.65
+      error_bar_width: 3
+      xerr_uncertainty_names: [uncertainty_combined, SEM, STD]
+      yerr_uncertainty_names: [combined, uncertainty_pixelvalues, SEM, STD, Poisson]
+      title: Combined SAXS/WAXS corrected I(Q)
+
+  SV_IQ:
+    module: SinkProcessingData
+    short_title: Save combined SAXS/WAXS I(Q)
+    requires_steps: [CAT_IQ]
+    configuration:
+      target: result_hdf::after_plot_iq
+      data_paths: [/saxs_waxs_1d]

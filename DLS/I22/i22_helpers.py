@@ -33,9 +33,13 @@ WAXS_PIPELINES = {
     "usaxs_saxs_waxs": "I22_WAXS_solids_operando_usaxs_saxs_waxs.yaml",
     "standard_saxs_waxs": "I22_WAXS_solids_operando_standard_saxs_waxs.yaml",
 }
-PREPROCESSING_VERSION = "2026-09-14-i22-transmission-v5"
+COMBINED_PIPELINES = {
+    "usaxs_saxs_waxs": "I22_SAXS_WAXS_solids_operando.yaml",
+}
+PREPROCESSING_VERSION = "2026-10-06-i22-flux-units-v9"
 BSDIODES_CHANNEL = 1
 I0_CHANNEL = 1
+FLUX_UNITS = "count/s"
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,13 +47,17 @@ class I22Inputs:
     project_dir: Path
     beamline_configuration: str
     pipeline_paths: dict[str, Path]
+    combined_pipeline_path: Path | None
     calibration_files: dict[str, Path]
     mask_files: dict[str, Path]
     background_file: Path
     transmission_reference_file: Path
+    intensity_calibration_file: Path
+    intensity_calibration_reference_file: Path
     sample_files: tuple[Path, ...]
     preprocessed_samples: tuple[Path, ...]
     preprocessed_background: Path
+    preprocessed_intensity_calibration: Path
 
     @property
     def work_dir(self) -> Path:
@@ -147,7 +155,12 @@ def _reference_readout_statistics(
 
 
 def _preprocessing_config(
-    *, absolute_intensity_factor: float, transmission_reference_file: str
+    *,
+    absolute_intensity_factor: float,
+    transmission_reference_file: str,
+    sample_thickness: float | None,
+    sample_thickness_units: str | None,
+    sample_thickness_source: str | None,
 ) -> dict[str, Any]:
     if not np.isfinite(absolute_intensity_factor) or absolute_intensity_factor <= 0:
         raise ValueError("absolute_intensity_factor must be a positive finite number.")
@@ -157,6 +170,9 @@ def _preprocessing_config(
         "i0_channel": I0_CHANNEL,
         "transmission_reference_file": transmission_reference_file,
         "absolute_intensity_factor": float(absolute_intensity_factor),
+        "sample_thickness": sample_thickness,
+        "sample_thickness_units": sample_thickness_units,
+        "sample_thickness_source": sample_thickness_source,
     }
 
 
@@ -181,6 +197,9 @@ def preprocess_measurement(
     *,
     transmission_reference_file: str | Path,
     absolute_intensity_factor: float = 3.8e-15,
+    sample_thickness: float | None = None,
+    sample_thickness_units: str | None = None,
+    sample_thickness_source: str | None = None,
     overwrite: bool = False,
 ) -> Path:
     """Reshape frame metadata while leaving detector images in their original files."""
@@ -192,7 +211,14 @@ def preprocess_measurement(
     config = _preprocessing_config(
         absolute_intensity_factor=absolute_intensity_factor,
         transmission_reference_file=relative_reference,
+        sample_thickness=sample_thickness,
+        sample_thickness_units=sample_thickness_units,
+        sample_thickness_source=sample_thickness_source,
     )
+    if (sample_thickness is None) != (sample_thickness_units is None):
+        raise ValueError("sample_thickness and sample_thickness_units must be provided together.")
+    if sample_thickness is not None and (not np.isfinite(sample_thickness) or sample_thickness <= 0):
+        raise ValueError("sample_thickness must be a positive finite number.")
     signature = _preprocessing_signature(config)
     if not _needs_rewrite(output_file, overwrite=overwrite, expected_signature=signature):
         return output_file
@@ -259,7 +285,9 @@ def preprocess_measurement(
         sample.attrs.update(sample_attrs)
         sample.attrs.setdefault("NX_class", "NXsample")
         for child in sample_children:
-            if child not in {"transmission", "transmission_sem"}:
+            if child not in {"transmission", "transmission_sem"} and not (
+                child == "thickness" and sample_thickness is not None
+            ):
                 sample[child] = h5py.ExternalLink(relative_master, f"/entry1/sample/{child}")
         target.attrs.update(
             creator="I22 MoDaCor examples helper",
@@ -272,6 +300,10 @@ def preprocess_measurement(
         normalization.attrs.update(
             description="Frame-wise arrays reshaped for broadcasting over detector y/x axes.",
             frame_shape=leading_shape,
+            readout_units=FLUX_UNITS,
+            readout_units_source=(
+                "I22 beamline semantics: I0 and bsdiodes values represent incident and transmitted photon rates"
+            ),
             bsdiodes_source="/entry1/bsdiodes/data",
             bsdiodes_reduction_axis=2,
             bsdiodes_channel_index=BSDIODES_CHANNEL,
@@ -280,22 +312,24 @@ def preprocess_measurement(
             i0_channel_index=I0_CHANNEL,
         )
         calibration = target.require_group("/modacor/calibration")
-        calibration.attrs["description"] = "Scalar calibration values used by the I22 MoDaCor pipelines."
+        calibration.attrs["description"] = (
+            "Transmission calibration values and the legacy DAWN cross-check intensity scalar."
+        )
         calibration.attrs["transmission_reference_file"] = relative_reference
         _write_dataset(
             calibration,
             "absolute_intensity_factor",
             np.asarray(absolute_intensity_factor, dtype=float),
             units="dimensionless",
-            source="DAWN processing factor for this example (provisional)",
+            source="Legacy DAWN cross-check factor; operational pipelines fit glassy carbon",
         )
-        _write_dataset(normalization, "bsdiodes_channel_1_mean", _detector_divisor(diode_mean), units="dimensionless")
-        _write_dataset(normalization, "bsdiodes_channel_1_std", _detector_divisor(diode_std), units="dimensionless")
-        _write_dataset(normalization, "bsdiodes_channel_1_sem", _detector_divisor(diode_sem), units="dimensionless")
+        _write_dataset(normalization, "bsdiodes_channel_1_mean", _detector_divisor(diode_mean), units=FLUX_UNITS)
+        _write_dataset(normalization, "bsdiodes_channel_1_std", _detector_divisor(diode_std), units=FLUX_UNITS)
+        _write_dataset(normalization, "bsdiodes_channel_1_sem", _detector_divisor(diode_sem), units=FLUX_UNITS)
         _write_dataset(normalization, "bsdiodes_channel_1_n_valid", _detector_divisor(diode_count))
-        _write_dataset(normalization, "i0_channel_1_mean", _detector_divisor(i0_mean), units="dimensionless")
-        _write_dataset(normalization, "i0_channel_1_std", _detector_divisor(i0_std), units="dimensionless")
-        _write_dataset(normalization, "i0_channel_1_sem", _detector_divisor(i0_sem), units="dimensionless")
+        _write_dataset(normalization, "i0_channel_1_mean", _detector_divisor(i0_mean), units=FLUX_UNITS)
+        _write_dataset(normalization, "i0_channel_1_std", _detector_divisor(i0_std), units=FLUX_UNITS)
+        _write_dataset(normalization, "i0_channel_1_sem", _detector_divisor(i0_sem), units=FLUX_UNITS)
         _write_dataset(normalization, "i0_channel_1_n_valid", _detector_divisor(i0_count))
         _write_dataset(
             calibration,
@@ -305,11 +339,11 @@ def preprocess_measurement(
             source=relative_reference,
         )
         _write_dataset(calibration, "bsdiodes_to_i0_ratio_sem", reference_ratio_sem, units="dimensionless")
-        _write_dataset(calibration, "reference_bsdiodes_mean", reference_diode_mean, units="dimensionless")
-        _write_dataset(calibration, "reference_bsdiodes_sem", reference_diode_sem, units="dimensionless")
+        _write_dataset(calibration, "reference_bsdiodes_mean", reference_diode_mean, units=FLUX_UNITS)
+        _write_dataset(calibration, "reference_bsdiodes_sem", reference_diode_sem, units=FLUX_UNITS)
         _write_dataset(calibration, "reference_bsdiodes_n_valid", reference_diode_count)
-        _write_dataset(calibration, "reference_i0_mean", reference_i0_mean, units="dimensionless")
-        _write_dataset(calibration, "reference_i0_sem", reference_i0_sem, units="dimensionless")
+        _write_dataset(calibration, "reference_i0_mean", reference_i0_mean, units=FLUX_UNITS)
+        _write_dataset(calibration, "reference_i0_sem", reference_i0_sem, units=FLUX_UNITS)
         _write_dataset(calibration, "reference_i0_n_valid", reference_i0_count)
         _write_dataset(
             sample,
@@ -319,6 +353,14 @@ def preprocess_measurement(
             long_name="Sample transmission derived from calibrated bsdiodes/I0 readouts",
         )
         _write_dataset(sample, "transmission_sem", _detector_divisor(transmission_sem), units="dimensionless")
+        if sample_thickness is not None:
+            _write_dataset(
+                sample,
+                "thickness",
+                np.asarray(sample_thickness, dtype=float),
+                units=str(sample_thickness_units),
+                source=sample_thickness_source or "Known glassy-carbon calibration-sample thickness",
+            )
         for detector, (values, units) in count_times.items():
             _write_dataset(normalization, f"{detector.lower()}_count_time", _detector_divisor(values), units=units)
     temporary.replace(output_file)
@@ -331,6 +373,12 @@ def prepare_inputs(
     sample_glob: str = "i22-978???.nxs",
     beamline_configuration: str = "usaxs_saxs_waxs",
     transmission_reference_file: str | Path | None = None,
+    intensity_calibration_file: str | Path = "data/i22-966700.nxs",
+    intensity_calibration_reference_file: str | Path = "data/Glassy Carbon L average.dat",
+    intensity_calibration_thickness: float = 1.0,
+    intensity_calibration_thickness_units: str = "mm",
+    sample_thickness: float = 50e-6,
+    sample_thickness_units: str = "m",
     absolute_intensity_factor: float = 3.8e-15,
     overwrite: bool = False,
 ) -> I22Inputs:
@@ -348,16 +396,33 @@ def prepare_inputs(
         transmission_reference = Path(transmission_reference_file)
         if not transmission_reference.is_absolute():
             transmission_reference = project_dir / transmission_reference
+    intensity_calibration = Path(intensity_calibration_file)
+    if not intensity_calibration.is_absolute():
+        intensity_calibration = project_dir / intensity_calibration
+    intensity_calibration_reference = Path(intensity_calibration_reference_file)
+    if not intensity_calibration_reference.is_absolute():
+        intensity_calibration_reference = project_dir / intensity_calibration_reference
     pipelines = {
         "SAXS": project_dir / "pipelines" / "I22_SAXS_solids_operando.yaml",
         "WAXS": project_dir / "pipelines" / WAXS_PIPELINES[beamline_configuration],
     }
+    combined_pipeline = COMBINED_PIPELINES.get(beamline_configuration)
+    combined_pipeline_path = project_dir / "pipelines" / combined_pipeline if combined_pipeline else None
     calibrations = {
         detector: data_dir / "processing" / f"{detector}_calibration.nxs"
         for detector in DETECTOR_DATASETS
     }
     masks = {detector: data_dir / "processing" / f"{detector}_mask.nxs" for detector in DETECTOR_DATASETS}
-    required = [background, transmission_reference, *pipelines.values(), *calibrations.values(), *masks.values()]
+    required = [
+        background,
+        transmission_reference,
+        intensity_calibration,
+        intensity_calibration_reference,
+        *pipelines.values(),
+        *(() if combined_pipeline_path is None else (combined_pipeline_path,)),
+        *calibrations.values(),
+        *masks.values(),
+    ]
     missing = [path for path in required if not path.is_file()]
     if missing:
         raise FileNotFoundError("Missing required I22 inputs: " + ", ".join(str(path) for path in missing))
@@ -381,33 +446,76 @@ def prepare_inputs(
                 raise ValueError(f"{detector} calibration/mask shapes differ: {calibration_shape} and {mask_shape}.")
 
     preprocessed_dir = project_dir / "work" / "preprocessed"
-    prepared = {
+    prepared_samples = {
         source: preprocess_measurement(
             source,
             preprocessed_dir,
             transmission_reference_file=transmission_reference,
             absolute_intensity_factor=absolute_intensity_factor,
+            sample_thickness=sample_thickness,
+            sample_thickness_units=sample_thickness_units,
+            sample_thickness_source="I22 acquisition title: 50 micron 3YSZ-PEGDA",
             overwrite=overwrite,
         )
-        for source in (*samples, background.resolve())
+        for source in samples
     }
+    prepared_background = preprocess_measurement(
+        background.resolve(),
+        preprocessed_dir,
+        transmission_reference_file=transmission_reference,
+        absolute_intensity_factor=absolute_intensity_factor,
+        overwrite=overwrite,
+    )
+    prepared_intensity_calibration = preprocess_measurement(
+        intensity_calibration,
+        preprocessed_dir,
+        transmission_reference_file=transmission_reference,
+        absolute_intensity_factor=absolute_intensity_factor,
+        sample_thickness=intensity_calibration_thickness,
+        sample_thickness_units=intensity_calibration_thickness_units,
+        sample_thickness_source="Known glassy-carbon calibration-sample thickness",
+        overwrite=overwrite,
+    )
     return I22Inputs(
         project_dir=project_dir,
         beamline_configuration=beamline_configuration,
         pipeline_paths=pipelines,
+        combined_pipeline_path=combined_pipeline_path,
         calibration_files=calibrations,
         mask_files=masks,
         background_file=background.resolve(),
         transmission_reference_file=transmission_reference.resolve(),
+        intensity_calibration_file=intensity_calibration.resolve(),
+        intensity_calibration_reference_file=intensity_calibration_reference.resolve(),
         sample_files=samples,
-        preprocessed_samples=tuple(prepared[path] for path in samples),
-        preprocessed_background=prepared[background.resolve()],
+        preprocessed_samples=tuple(prepared_samples[path] for path in samples),
+        preprocessed_background=prepared_background,
+        preprocessed_intensity_calibration=prepared_intensity_calibration,
     )
 
 
 def source_registrations(inputs: I22Inputs, *, sample: str | Path | None = None) -> list[dict[str, Any]]:
     registrations = [
         {"ref": "background", "type": "hdf", "location": str(inputs.preprocessed_background)},
+        {
+            "ref": "intensity_calibration",
+            "type": "hdf",
+            "location": str(inputs.preprocessed_intensity_calibration),
+        },
+        {
+            "ref": "intensity_calibration_reference",
+            "type": "csv",
+            "location": str(inputs.intensity_calibration_reference_file),
+            "kwargs": {
+                "iosource_method_kwargs": {
+                    "delimiter": "\t",
+                    "skip_header": 42,
+                    "names": ["Q", "I", "I_sigma"],
+                    "dtype": "float",
+                    "encoding": "utf-8",
+                }
+            },
+        },
         {"ref": "saxs_calibration", "type": "hdf", "location": str(inputs.calibration_files["SAXS"])},
         {"ref": "saxs_mask", "type": "hdf", "location": str(inputs.mask_files["SAXS"])},
         {"ref": "waxs_calibration", "type": "hdf", "location": str(inputs.calibration_files["WAXS"])},
@@ -422,9 +530,20 @@ def validation_pipeline_yaml(pipeline_path: str | Path) -> str:
     """Remove display/file sinks from a copy while preserving numerical processing."""
 
     pipeline = yaml.safe_load(Path(pipeline_path).read_text(encoding="utf-8"))
-    for step_id in ("PL_IQ", "SV_IQ", "PL_2D", "SV_2D"):
+    for step_id in (
+        "PL_IQ",
+        "SV_IQ",
+        "PL_2D",
+        "SV_2D",
+        "PL_waxs_IQ",
+        "SV_waxs_IQ",
+        "PL_waxs_2D",
+        "SV_waxs_2D",
+    ):
         pipeline["steps"].pop(step_id, None)
     pipeline["steps"]["AV"]["requires_steps"] = ["PO"]
+    if "AV_waxs" in pipeline["steps"]:
+        pipeline["steps"]["AV_waxs"]["requires_steps"] = ["PO"]
     pipeline["name"] = f"{pipeline['name']} - chunk validation"
     pipeline["description"] = (
         f"{pipeline.get('description', '')} Test-only copy without visualization or intermediate sinks."
@@ -443,6 +562,13 @@ def sample_aligned_paths(detector: str) -> tuple[str, ...]:
     )
 
 
+def sample_static_paths() -> tuple[str, ...]:
+    return (
+        "/entry1/sample/thickness",
+        "/modacor/calibration/absolute_intensity_factor",
+    )
+
+
 def upload_sample_chunk(
     buffer: SourceBufferClient, detector: str, source_path: str | Path, start: int, stop: int
 ) -> None:
@@ -452,15 +578,15 @@ def upload_sample_chunk(
     with h5py.File(source_path, "r") as source:
         for data_path in sample_aligned_paths(detector):
             buffer.put_array(data_path, source[data_path][selection])
-        scalar_path = "/modacor/calibration/absolute_intensity_factor"
-        buffer.put_array(scalar_path, source[scalar_path][()])
+        for data_path in sample_static_paths():
+            buffer.put_array(data_path, source[data_path][()])
         for data_path in (
             "/modacor/normalization/i0_channel_1_mean",
             "/modacor/normalization/i0_channel_1_sem",
             "/entry1/sample/transmission",
             "/entry1/sample/transmission_sem",
             f"/modacor/normalization/{detector.lower()}_count_time",
-            scalar_path,
+            *sample_static_paths(),
         ):
             buffer.put_attrs(data_path, {"units": str(_decode(source[data_path].attrs["units"]))})
 
@@ -603,7 +729,9 @@ def build_complete_plan(
     source_bindings = ()
     if source_mode in {"hdf", "tiled"}:
         driver["source"] = f"sample::{DETECTOR_DATASETS[detector]}"
-        source_bindings = tuple(ChunkSourceBinding("sample", path, "aligned") for path in sample_aligned_paths(detector))
+        source_bindings = tuple(
+            ChunkSourceBinding("sample", path, "aligned") for path in sample_aligned_paths(detector)
+        ) + tuple(ChunkSourceBinding("sample", path, "static") for path in sample_static_paths())
     suffix = "" if source_mode == "buffer" else f"-{source_mode}"
     return ChunkPlan(
         schema_version="1.0",

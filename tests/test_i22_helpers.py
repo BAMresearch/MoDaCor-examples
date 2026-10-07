@@ -6,7 +6,12 @@ import h5py
 import numpy as np
 import pytest
 
-from i22_helpers import _pilot_output_layout, chunk_work_items, preprocess_measurement
+from i22_helpers import (
+    _pilot_output_layout,
+    build_complete_plan,
+    chunk_work_items,
+    preprocess_measurement,
+)
 
 
 def _write_measurement(path: Path) -> None:
@@ -15,10 +20,10 @@ def _write_measurement(path: Path) -> None:
         h5.create_dataset("/entry1/Pilatus2M_WAXS/data", data=np.ones((1, 2, 3, 2)))
         diode = np.arange(12, dtype=float).reshape(1, 2, 3, 2)
         h5.create_dataset("/entry1/bsdiodes/data", data=diode)
+        h5.create_dataset("/entry1/I0/data", data=np.ones_like(diode))
         for detector in ("detector", "Pilatus2M_WAXS"):
             count_time = h5.create_dataset(f"/entry1/instrument/{detector}/count_time", data=1.0)
             count_time.attrs["units"] = "s"
-        h5.create_dataset("/entry1/I0/transmission", data=np.ones((1, 2)))
 
 
 def _write_pilot(path: Path, *, weights_shape=(4,), uncertainty_shape=(4,)) -> None:
@@ -27,6 +32,10 @@ def _write_pilot(path: Path, *, weights_shape=(4,), uncertainty_shape=(4,)) -> N
         signal = group.create_dataset("signal", data=np.ones(4))
         signal.attrs["units"] = "1/cm"
         signal.attrs["rank_of_data"] = 1
+        group.attrs["axes"] = ["Q"]
+        q = group.create_dataset("Q", data=np.arange(4, dtype=float))
+        q.attrs["units"] = "1/nm"
+        q.attrs["rank_of_data"] = 1
         group.create_dataset("weights", data=np.ones(weights_shape))
         group.require_group("uncertainties").create_dataset("poisson", data=np.ones(uncertainty_shape))
 
@@ -36,12 +45,22 @@ def test_preprocessing_cache_depends_on_absolute_intensity_factor(tmp_path):
     output_dir = tmp_path / "prepared"
     _write_measurement(source)
 
-    output = preprocess_measurement(source, output_dir, absolute_intensity_factor=1.0)
+    output = preprocess_measurement(
+        source,
+        output_dir,
+        transmission_reference_file=source,
+        absolute_intensity_factor=1.0,
+    )
     with h5py.File(output, "r") as h5:
         first_signature = h5.attrs["preprocessing_signature"]
         assert h5["/modacor/calibration/absolute_intensity_factor"][()] == 1.0
 
-    preprocess_measurement(source, output_dir, absolute_intensity_factor=2.0)
+    preprocess_measurement(
+        source,
+        output_dir,
+        transmission_reference_file=source,
+        absolute_intensity_factor=2.0,
+    )
     with h5py.File(output, "r") as h5:
         assert h5.attrs["preprocessing_signature"] != first_signature
         assert h5["/modacor/calibration/absolute_intensity_factor"][()] == 2.0
@@ -76,3 +95,23 @@ def test_pilot_layout_rejects_mismatched_per_chunk_arrays(
 
     with pytest.raises(ValueError, match=match):
         _pilot_output_layout(pilot, "pilot", measurement_count=2, chunks_per_measurement=3)
+
+
+def test_direct_chunk_plan_keeps_sample_thickness_static(tmp_path):
+    pilot = tmp_path / "pilot.h5"
+    _write_pilot(pilot)
+
+    plan = build_complete_plan(
+        pilot,
+        "pilot",
+        "SAXS",
+        ((Path("master.nxs"), Path("prepared.nxs")),),
+        (1, 4, 2, 3),
+        frame_count=4,
+        chunk_size=2,
+        source_mode="hdf",
+    )
+
+    roles = {binding.data_key: binding.role for binding in plan.source_bindings}
+    assert roles["/entry1/sample/thickness"] == "static"
+    assert roles["/entry1/detector/data"] == "aligned"
