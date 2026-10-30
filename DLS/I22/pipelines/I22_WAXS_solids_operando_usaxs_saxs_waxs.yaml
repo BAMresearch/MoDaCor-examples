@@ -461,7 +461,8 @@ steps:
     requires_steps: [SP]
     configuration:
       with_processing_keys: [sample]
-      material: Si
+      # Pilatus detector specification: silicon sensor (Si).
+      chemical_formula: Si
       density: 2.33
       density_units: g/cm^3
       thickness: 0.32
@@ -476,7 +477,8 @@ steps:
     requires_steps: [SP_intensity_calibration]
     configuration:
       with_processing_keys: [intensity_calibration]
-      material: Si
+      # Pilatus detector specification: silicon sensor (Si).
+      chemical_formula: Si
       density: 2.33
       density_units: g/cm^3
       thickness: 0.32
@@ -494,7 +496,8 @@ steps:
   #   requires_steps: [DE]
   #   configuration:
   #     with_processing_keys: [sample]
-  #     material: Al
+  #     # Provisional Al formula from the DAWN Attenuation correction settings.
+  #     chemical_formula: Al
   #     density: 2.699
   #     density_units: g/cm^3
   #     thickness: 0.1
