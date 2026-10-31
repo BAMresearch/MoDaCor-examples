@@ -426,7 +426,7 @@ steps:
     requires_steps: [SP]
     configuration:
       with_processing_keys: [sample]
-      material_source: sample::/entry1/instrument/detector00/sensor_material
+      chemical_formula_source: sample::/entry1/instrument/detector00/sensor_material
       density: 2.33
       density_units: g/cm^3
       thickness_source: sample::/entry1/instrument/detector00/sensor_thickness
