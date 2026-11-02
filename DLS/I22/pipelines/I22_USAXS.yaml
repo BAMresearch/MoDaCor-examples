@@ -538,7 +538,6 @@ step_blocks:
           angle_convention: scattering_angle
           center_key: beam_center
           output_key: Q
-          output_units: 1/nm
 
   combine_acquisition_diode_pairs:
     # Refit the scientific rear/front response after centring, using only the
@@ -892,3 +891,39 @@ steps:
       use_value_uncertainty_weights: true
       uncertainty_weight_key: subread_sem
       stats_keys: [signal, Q]
+  OUTPUT_UNITS:
+    module: ConvertUnits
+    short_title: Report Q-valued outputs in 1/nm
+    # AngleToQ returns Q in 1/m. Once processing is complete, convert every
+    # Q-valued output; bundles without a key are skipped.
+    requires_steps: [AV]
+    configuration:
+      with_processing_keys: "*"
+      units:
+        Q: 1/nm
+        signed_Q: 1/nm
+        bin_edges: 1/nm
+        merge_bin_edges: 1/nm
+        gain_fit_x_min: 1/nm
+        gain_fit_x_max: 1/nm
+  OUTPUT_UNITS_DIODE_FIT:
+    module: ConvertUnits
+    short_title: Report Q-based diode-fit ranges in 1/nm
+    # diode_fit ranges are Q-valued only in the science bundles; the centring
+    # fits use the yaw angle and keep their angular units.
+    requires_steps: [OUTPUT_UNITS]
+    configuration:
+      with_processing_keys: [S_science_low_rear, B_science_low_rear]
+      units:
+        diode_fit_x_min: 1/nm
+        diode_fit_x_max: 1/nm
+  OUTPUT_UNITS_INTEGRALS:
+    module: ConvertUnits
+    short_title: Report transmission integrals over Q in 1/nm
+    # The integrals carry Q units from Integrate1D. The transmission ratio
+    # was formed before this step and is unaffected.
+    requires_steps: [OUTPUT_UNITS_DIODE_FIT]
+    configuration:
+      with_processing_keys: [sample_integral, background_integral]
+      units:
+        signal: 1/nm
