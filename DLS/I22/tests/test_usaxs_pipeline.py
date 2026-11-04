@@ -16,7 +16,7 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
     pipeline = Pipeline.from_yaml_file(PIPELINE_PATH)
     spec = pipeline.to_spec()
 
-    assert len(spec["nodes"]) == 184
+    assert len(spec["nodes"]) == 187
     assert sum("origin" in node for node in spec["nodes"]) == 172
     assert Counter(node["module"] for node in spec["nodes"]) == {
         "AppendProcessingData": 28,
@@ -36,6 +36,7 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
         "SubtractInterpolated1D": 1,
         "BitwiseOrMasks": 9,
         "Negate": 1,
+        "ConvertUnits": 3,
     }
     assert "step_blocks" in pipeline.authored_spec
     assert "step_blocks" not in yaml.safe_load(pipeline.to_yaml())
@@ -90,6 +91,9 @@ def test_usaxs_pipeline_expands_to_the_complete_execution_graph() -> None:
     assert node_configs["convert_q.SLF.q"]["photon_source"] == "sample::/entry1/low_gain_front/energy"
     assert node_configs["convert_q.BHR.q"]["photon_source"] == "background::/entry1/high_gain_rear/energy"
     assert "incident_key" not in node_configs["convert_q.SLF.q"]
+    assert "output_units" not in node_configs["convert_q.SLF.q"]
+    assert node_configs["OUTPUT_UNITS"]["with_processing_keys"] == "*"
+    assert node_configs["OUTPUT_UNITS"]["units"]["Q"] == "1/nm"
     for item in ("sample", "background"):
         pool_config = node_configs[f"merge_acquisition.{item}.pool"]
         assert pool_config["uncertainty_key_policy"] == "fill_zero"
